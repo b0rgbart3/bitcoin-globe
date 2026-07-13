@@ -1,0 +1,15 @@
+{
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  }
+}

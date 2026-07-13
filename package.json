@@ -1,0 +1,17 @@
+{
+  "name": "bitcoin-globe",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev -w frontend",
+    "dev:backend": "npm run dev -w backend"
+  },
+  "dependencies": {
+    "react-dom": "*"
+  }
+}

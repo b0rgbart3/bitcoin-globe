@@ -1,0 +1,38 @@
+
+node_modules
+design
+.env
+frontend/node_modules
+
+# Build outputs
+dist
+frontend/dist
+backend/dist
+shared/dist
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Vite cache
+frontend/.vite
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor config
+.vscode/
+.idea/
+
+# Local env variants
+.env.local
+.env.*.local
+
+# Additional node_modules
+backend/node_modules
+shared/node_modules
