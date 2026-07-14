@@ -1,18 +1,20 @@
 // ============================================================================
 // frontend/src/scene/Globe.tsx
-// The network body: lit silhouette globe, coastlines, graticule, the dynamic
-// (mempool-driven) atmosphere, and the glowing nodes.
-// Values marked // tune are the ones you've been adjusting by feel.
+// The network body, observatory-instrument register: a dark silhouette globe
+// with a faint graticule, a muted fresnel atmosphere, and warm glowing nodes.
+// Boldness is spent entirely on the node glow (see Bloom in App).
 // ============================================================================
 
-import { useMemo, type MutableRefObject } from "react";
+import { useMemo } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
+import type { NodeSnapshot } from "@btcglobe/shared/types";
 import { Coastlines } from "./Coastlines";
 import { Atmosphere } from "./Atmosphere";
-import type { NodeSnapshot, MempoolState } from "@btcglobe/shared/types";
+import type { MempoolState } from "@btcglobe/shared/types";
+import type { MutableRefObject } from "react";
 
-const GLOBE_RADIUS = 1.8;
+const GLOBE_RADIUS = 2;
 const NODE_RADIUS = GLOBE_RADIUS * 1.01;
 
 function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
@@ -67,8 +69,8 @@ function Nodes({ located }: { located: NodeSnapshot["located"] }) {
       </bufferGeometry>
       <pointsMaterial
         map={glow}
-        color="#61ffb3" // tune: node color
-        size={0.14} // tune: node size
+        color="#10e2bf"
+        size={0.14}
         sizeAttenuation
         transparent
         depthWrite={false}
@@ -78,7 +80,7 @@ function Nodes({ located }: { located: NodeSnapshot["located"] }) {
   );
 }
 
-// Faint lat/long rings: structure + orientation, kept quieter than the coastlines.
+// Faint lat/long rings: gives the sphere 3D structure and orientation.
 function Graticule({ radius }: { radius: number }) {
   const geo = useMemo(() => {
     const pts: THREE.Vector3[] = [];
@@ -118,53 +120,69 @@ function Graticule({ radius }: { radius: number }) {
 
   return (
     <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#21344a" transparent opacity={0.35} />{" "}
-      {/* tune: graticule color/opacity */}
+      <lineBasicMaterial color="#21344a" transparent opacity={0.55} />
     </lineSegments>
   );
 }
 
-export function Globe({
-  snapshot,
-  mempoolRef,
-}: {
+// export function Globe({ snapshot }: { snapshot: NodeSnapshot | null, }) {
+//   const atmosphere = useMemo(
+//     () =>
+//       new THREE.ShaderMaterial({
+//         uniforms: {
+//           uColor: { value: new THREE.Color("#3b6a8c") },
+//           uStrength: { value: 0.01 },
+//         }, // master dial: 0 = invisible, 1 = full},
+//         vertexShader: `
+//           varying vec3 vNormal;
+//           void main() {
+//             vNormal = normalize(normalMatrix * normal);
+//             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+//           }`,
+//         fragmentShader: `
+//           varying vec3 vNormal;
+//           uniform vec3 uColor;
+//           void main() {
+//             float i = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.6);
+//             gl_FragColor = vec4(uColor, 0.2) * clamp(i, 0.0, 1.0);
+//           }`,
+//         side: THREE.BackSide,
+//         blending: THREE.AdditiveBlending,
+//         transparent: true,
+//         depthWrite: false,
+//       }),
+//     [],
+//   );
+
+export function Globe({ snapshot, mempoolRef }: {
   snapshot: NodeSnapshot | null;
   mempoolRef: MutableRefObject<MempoolState | null>;
 }) {
   return (
     <group>
-      {/* dark, light-reactive body — shows the terminator as it rotates */}
+      {/* dark silhouette body (occludes far-side nodes) */}
       <mesh>
         <sphereGeometry args={[GLOBE_RADIUS, 64, 64]} />
-        <meshStandardMaterial
-          color="#0d1826"
-          roughness={1}
-          metalness={0}
-        />{" "}
-        {/* tune: body color */}
+        <meshStandardMaterial color="#0d1826" roughness={1} metalness={0} />
       </mesh>
-
-      <Coastlines radius={GLOBE_RADIUS * 1.003} color="#15616e" opacity={0.7} />
+      <Coastlines
+        radius={GLOBE_RADIUS * 1.003}
+        color="#387483"
+        opacity={0.85}
+      />
 
       <Graticule radius={GLOBE_RADIUS * 1.002} />
 
-      {/* dynamic atmosphere — breathes with live mempool pressure */}
-      <Atmosphere
-        mempoolRef={mempoolRef}
-        radius={
-          GLOBE_RADIUS
-        } /* color="#3b6a8c" exponent={3.5} baseStrength={0.35} maxStrength={0.95} */
-      />
+      <Atmosphere mempoolRef={mempoolRef} radius={GLOBE_RADIUS} />
 
       {snapshot && <Nodes located={snapshot.located} />}
 
       <OrbitControls
         enablePan={false}
-        minDistance={4}
-        maxDistance={8}
+        minDistance={3}
+        maxDistance={9}
         autoRotate
         autoRotateSpeed={0.35}
-        zoomSpeed={0.1} /* default is 1.0 — lower = slower */
       />
     </group>
   );

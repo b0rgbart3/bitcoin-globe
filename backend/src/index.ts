@@ -1,6 +1,7 @@
 // backend/src/index.ts
 import { fileURLToPath } from "node:url";
 import { BitnodesSource } from "./sources/bitnodes";
+import { MempoolSource } from "./sources/mempool";
 import { Gateway } from "./gateway/ws";
 
 let bitnodes: BitnodesSource;
@@ -18,4 +19,9 @@ bitnodes = new BitnodesSource({
     onUpdate: (snap) => gateway.broadcast({ type: "nodes", data: snap }),
 });
 
+const mempool = new MempoolSource({
+    onUpdate: (state) => gateway.broadcast({ type: "mempool", data: state }),
+});
+
 await bitnodes.start();
+mempool.start();

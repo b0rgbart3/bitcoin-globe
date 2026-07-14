@@ -1,15 +1,11 @@
-// ============================================================================
 // frontend/src/App.tsx
-// Canvas + Bloom + Starfield + Globe, with a monospace telemetry readout.
-// Bloom is the "one risk": it turns the gold nodes into signal-fire.
-// ============================================================================
-
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { Globe } from "./scene/Globe";
 import { Starfield } from "./scene/Starfield";
-import { useNodeSocket } from "./net/useNodeSocket";
+import { useNetworkSocket } from "./net/useNetworkSocket";
 import "./App.scss";
+import { pressureFromMempool } from "./scene/pressure";
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -21,7 +17,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 export default function App() {
-  const snapshot = useNodeSocket();
+  const { snapshot, mempool, mempoolRef } = useNetworkSocket();
 
   return (
     <div className="app">
@@ -34,25 +30,47 @@ export default function App() {
               value={snapshot.unlocatableCount.toString()}
               label="unlocatable"
             />
+
             <Stat
               value={snapshot.chainHeight.toLocaleString()}
               label="height"
             />
+
+            {mempool && (
+              <Stat
+                value={(mempool.pendingVBytes / 1e6).toFixed(1)}
+                label="pending vMB"
+              />
+            )}
+            {mempool && (
+              <Stat
+                value={Math.round(mempool.intakeVBytesPerSec).toString()}
+                label="intake vB/s"
+              />
+            )}
+            {mempool && (
+              <Stat
+                value={Math.round(
+                  pressureFromMempool(mempool) * 100,
+                ).toString()}
+                label="pressure"
+              />
+            )}
           </div>
         ) : (
           <div className="telemetry__standby">awaiting first snapshot…</div>
         )}
       </div>
 
-      <Canvas camera={{ position: [0, 5, 5], fov: 45 }}>
+      <Canvas camera={{ position: [0, 0, 6.5], fov: 35 }}>
         <color attach="background" args={["#060a12"]} />
-        <Starfield />
-        <ambientLight intensity={0.25} />
+        <ambientLight intensity={0.5} />
         <directionalLight position={[4, 2, 3]} intensity={1.1} />
-        <Globe snapshot={snapshot} />
+        <Starfield />
+        <Globe snapshot={snapshot} mempoolRef={mempoolRef} />
         <EffectComposer>
           <Bloom
-            luminanceThreshold={0.5}
+            luminanceThreshold={0.15}
             luminanceSmoothing={0.9}
             intensity={0.9}
             radius={0.7}
