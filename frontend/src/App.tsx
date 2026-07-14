@@ -6,6 +6,7 @@ import { Starfield } from "./scene/Starfield";
 import { useNetworkSocket } from "./net/useNetworkSocket";
 import "./App.scss";
 import { pressureFromMempool } from "./scene/pressure";
+import { Heartbeat } from "./scene/Heartbeat";
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -17,7 +18,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 export default function App() {
-  const { snapshot, mempool, mempoolRef } = useNetworkSocket();
+  const { snapshot, mempool, mempoolRef, block } = useNetworkSocket();
 
   return (
     <div className="app">
@@ -68,6 +69,7 @@ export default function App() {
         <directionalLight position={[4, 2, 3]} intensity={1.1} />
         <Starfield />
         <Globe snapshot={snapshot} mempoolRef={mempoolRef} />
+        <Heartbeat block={block} radius={2} />
         <EffectComposer>
           <Bloom
             luminanceThreshold={0.15}

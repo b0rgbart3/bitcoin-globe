@@ -21,6 +21,7 @@ bitnodes = new BitnodesSource({
 
 const mempool = new MempoolSource({
     onUpdate: (state) => gateway.broadcast({ type: "mempool", data: state }),
+    onBlock: (block) => gateway.broadcast({ type: "block", data: block }),
 });
 
 await bitnodes.start();
