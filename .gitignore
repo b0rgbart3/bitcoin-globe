@@ -36,3 +36,6 @@ Thumbs.db
 # Additional node_modules
 backend/node_modules
 shared/node_modules
+
+.cache
+

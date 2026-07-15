@@ -5,15 +5,25 @@
 // Values marked // tune are the ones you've been adjusting by feel.
 // ============================================================================
 
-import { useMemo, type MutableRefObject } from "react";
+import { useMemo, useRef, type MutableRefObject } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
 import { Coastlines } from "./Coastlines";
 import { Atmosphere } from "./Atmosphere";
 import type { NodeSnapshot, MempoolState } from "@btcglobe/shared/types";
+import { pulseProgress } from "./blockPulse"; // new
+import { PULSE_DURATION } from "./Heartbeat";
+import { UnlocatableHalo } from "./UnlocatableHalo";
 
 const GLOBE_RADIUS = 1.8;
 const NODE_RADIUS = GLOBE_RADIUS * 1.01;
+const NODE_BASE_SIZE = 0.05; // resting size (your tuned value)
+const FLARE_SIZE_GAIN = 2.1; // how much bigger at peak flare
+const FLARE_COLOR = new THREE.Color("#0fdeca"); // hot white-gold at peak
+const BASE_COLOR = new THREE.Color("#01a272"); // resting gold (your tuned value)
+// Fast attack, slow decay — a flash, not a swell.
+const FLARE_ATTACK = 0.025; // fraction of the pulse spent rising to peak
 
 function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
   const phi = (90 - lat) * (Math.PI / 180);
@@ -49,6 +59,8 @@ function makeGlowTexture(): THREE.Texture {
 
 function Nodes({ located }: { located: NodeSnapshot["located"] }) {
   const glow = useMemo(makeGlowTexture, []);
+  const matRef = useRef<THREE.PointsMaterial>(null);
+
   const positions = useMemo(() => {
     const arr = new Float32Array(located.length * 3);
     located.forEach((n, i) => {
@@ -60,15 +72,40 @@ function Nodes({ located }: { located: NodeSnapshot["located"] }) {
     return arr;
   }, [located]);
 
+  // The flare: on each block pulse the nodes bloom hot and settle back.
+  // Reads the SAME clock as the shockwave, so they fire together — which is
+  // what makes the wave read as emanating from the network, not the Earth.
+  useFrame((state) => {
+    const mat = matRef.current;
+    if (!mat) return;
+
+    const p = pulseProgress(state.clock.elapsedTime, PULSE_DURATION);
+    if (p === null) {
+      mat.size = NODE_BASE_SIZE;
+      mat.color.copy(BASE_COLOR);
+      return;
+    }
+
+    // inside useFrame:
+    const env =
+      p < FLARE_ATTACK
+        ? p / FLARE_ATTACK
+        : Math.pow(1 - (p - FLARE_ATTACK) / (1 - FLARE_ATTACK), 2);
+
+    mat.size = NODE_BASE_SIZE * (1 + (FLARE_SIZE_GAIN - 1) * env);
+    mat.color.copy(BASE_COLOR).lerp(FLARE_COLOR, env);
+  });
+
   return (
     <points key={positions.length}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
+        ref={matRef}
         map={glow}
-        color="#61ffb3" // tune: node color
-        size={0.14} // tune: node size
+        color={BASE_COLOR}
+        size={NODE_BASE_SIZE}
         sizeAttenuation
         transparent
         depthWrite={false}
@@ -144,7 +181,7 @@ export function Globe({
         {/* tune: body color */}
       </mesh>
 
-      <Coastlines radius={GLOBE_RADIUS * 1.003} color="#15616e" opacity={0.7} />
+      <Coastlines radius={GLOBE_RADIUS * 1.003} color="#06798d" opacity={0.7} />
 
       <Graticule radius={GLOBE_RADIUS * 1.002} />
 
@@ -157,14 +194,15 @@ export function Globe({
       />
 
       {snapshot && <Nodes located={snapshot.located} />}
+      {snapshot && <UnlocatableHalo count={snapshot.unlocatableCount} />}
 
       <OrbitControls
         enablePan={false}
-        minDistance={4}
-        maxDistance={8}
+        minDistance={4.5}
+        maxDistance={12}
         autoRotate
-        autoRotateSpeed={0.35}
-        zoomSpeed={0.1} /* default is 1.0 — lower = slower */
+        autoRotateSpeed={0.1}
+        zoomSpeed={0.08} /* default is 1.0 — lower = slower */
       />
     </group>
   );

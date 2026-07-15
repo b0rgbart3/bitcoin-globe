@@ -11,11 +11,27 @@ const gateway = new Gateway({
     getInitial: () => bitnodes?.getLatest() ?? null,
 });
 
+// bitnodes = new BitnodesSource({
+//     source: {
+//         kind: "fixture",
+//         path: fileURLToPath(new URL("../fixtures/nodes-snapshot.json", import.meta.url)),
+//     },
+//     onUpdate: (snap) => gateway.broadcast({ type: "nodes", data: snap }),
+// });
+
+// bitnodes = new BitnodesSource({
+//     source: { kind: "http", url: "https://bitnodes.io/api/v1/snapshots/latest/" },
+//     onUpdate: (snap) => gateway.broadcast({ type: "nodes", data: snap }),
+// });
+
 bitnodes = new BitnodesSource({
+    // source: { kind: "http", url: "https://bitnodes.io/api/v1/snapshots/latest/" },
     source: {
         kind: "fixture",
-        path: fileURLToPath(new URL("../fixtures/nodes-snapshot.json", import.meta.url)),
+        path: fileURLToPath(new URL("../fixtures/nodes-snapshot-large.json", import.meta.url)),
     },
+    cacheDir: fileURLToPath(new URL("../.cache", import.meta.url)),
+    fixturePath: fileURLToPath(new URL("../fixtures/nodes-snapshot.json", import.meta.url)),
     onUpdate: (snap) => gateway.broadcast({ type: "nodes", data: snap }),
 });
 

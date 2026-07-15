@@ -1,20 +1,20 @@
 // ============================================================================
 // frontend/src/scene/Heartbeat.tsx
-// The block heartbeat: an expanding fresnel shell that ripples outward and fades
-// each time a block is mined. A discrete-lane animation — spawned on the event,
-// runs ~1.8s, retires. (Next: a node flare so it reads as coming from the
-// network rather than from the Earth's center.)
+// The block heartbeat's shockwave. Now fires a SHARED pulse (blockPulse.ts) so
+// the node flare can ride the same clock — making the wave read as coming from
+// the network rather than from the Earth's center.
 // ============================================================================
 
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { Block } from "@btcglobe/shared/types";
+import { firePulse, pulseProgress } from "./blockPulse";
 
-const DURATION = 2.8; // seconds: expand + fade
-const START_SCALE = 1.02; // just outside the globe surface
-const END_SCALE = 3.7;
-const PEAK_OPACITY = 0.5;
+export const PULSE_DURATION = 1.8; // shared by the flare — keep in one place
+const START_SCALE = 0.8;
+const END_SCALE = 2.7;
+const PEAK_OPACITY = 1.0; // <-- YOUR TUNED VALUE
 
 export function Heartbeat({
   block,
@@ -24,7 +24,6 @@ export function Heartbeat({
   radius: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const startRef = useRef(-Infinity);
   const pendingRef = useRef(false);
   const lastHashRef = useRef<string | null>(null);
 
@@ -32,7 +31,7 @@ export function Heartbeat({
     () =>
       new THREE.ShaderMaterial({
         uniforms: {
-          uColor: { value: new THREE.Color("#13c3b1") }, // warm, ties to the nodes
+          uColor: { value: new THREE.Color("#00bba5") },
           uOpacity: { value: 0 },
         },
         vertexShader: `
@@ -46,10 +45,10 @@ export function Heartbeat({
           uniform vec3 uColor;
           uniform float uOpacity;
           void main() {
-            // bright at the silhouette -> reads as an expanding ring
-            float rim = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, .3))), 6.0);
-rim = smoothstep(0.125, 1.0, rim); // cut the dim tail where banding lives
-gl_FragColor = vec4(uColor, 1.0) * rim * uOpacity;
+            // <-- YOUR TUNED VALUES: exponent + smoothstep floor
+            float rim = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 8.0);
+            rim = smoothstep(0.15, 1.0, rim);
+            gl_FragColor = vec4(uColor, 1.0) * rim * uOpacity;
           }`,
         side: THREE.DoubleSide,
         blending: THREE.AdditiveBlending,
@@ -59,14 +58,13 @@ gl_FragColor = vec4(uColor, 1.0) * rim * uOpacity;
     [],
   );
 
-  // Fire on a genuinely new block (guard the hash against StrictMode double-invoke).
   useEffect(() => {
     if (!block || block.hash === lastHashRef.current) return;
     lastHashRef.current = block.hash;
     pendingRef.current = true;
   }, [block]);
 
-  // DEV: press "b" to fire a test ripple without waiting ~10 min. Remove later.
+  // DEV: press "b" to fire a test pulse. Remove before shipping.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "b") pendingRef.current = true;
@@ -80,20 +78,20 @@ gl_FragColor = vec4(uColor, 1.0) * rim * uOpacity;
     if (!mesh) return;
     const now = state.clock.elapsedTime;
 
+    // Fire the SHARED pulse — the node flare reads this same clock.
     if (pendingRef.current) {
-      startRef.current = now;
+      firePulse(now);
       pendingRef.current = false;
     }
 
-    const t = now - startRef.current;
-    if (t >= 0 && t <= DURATION) {
-      const p = t / DURATION;
-      mesh.scale.setScalar(START_SCALE + (END_SCALE - START_SCALE) * p);
-      material.uniforms.uOpacity.value = PEAK_OPACITY * (1 - p) * (1 - p); // ease-out
-      mesh.visible = true;
-    } else {
+    const p = pulseProgress(now, PULSE_DURATION);
+    if (p === null) {
       mesh.visible = false;
+      return;
     }
+    mesh.scale.setScalar(START_SCALE + (END_SCALE - START_SCALE) * p);
+    material.uniforms.uOpacity.value = PEAK_OPACITY * (1 - p) * (1 - p);
+    mesh.visible = true;
   });
 
   return (
