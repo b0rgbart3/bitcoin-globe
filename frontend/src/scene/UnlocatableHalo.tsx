@@ -57,8 +57,8 @@ export function UnlocatableHalo({
   tiltDrift = 0.28,
   tiltDriftSpeed = 0.01,
   size = 0.045,
-  baseColor = "#7fd4c1",
-  flareColor = "#e8fff8",
+  baseColor = "#429785",
+  flareColor = "#9bfddf",
   flareSizeGain = 1.7,
   driftSpeed = 0.01, // its own slow rotation, independent of the globe
 }: {

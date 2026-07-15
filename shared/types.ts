@@ -190,8 +190,9 @@ export interface Tx {
 // ---------------------------------------------------------------------------
 
 export type ServerMessage =
-  | { type: "nodes";      data: NodeSnapshot }        // slow: on connect + hourly
-  | { type: "mempool";    data: MempoolState }        // continuous: ~1-2s
+  | { type: "nodes"; data: NodeSnapshot }        // slow: on connect + hourly
+  | { type: "mempool"; data: MempoolState }        // continuous: ~1-2s
   | { type: "candidates"; data: CandidateBlock[] }    // continuous: ~2s
-  | { type: "block";      data: Block }               // discrete: on new block
-  | { type: "txs";        data: { blockHash: string; txs: Tx[] } }; // on-demand
+  | { type: "block"; data: Block }               // discrete: on new block
+  | { type: "tx-stream"; data: Tx[] }
+  | { type: "txs"; data: { blockHash: string; txs: Tx[] } }; // on-demand

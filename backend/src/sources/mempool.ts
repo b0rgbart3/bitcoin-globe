@@ -7,8 +7,10 @@
 import { WebSocket } from "ws";
 import type {
   MempoolInfoRaw, FeeEstimatesRaw, MempoolState, BlockRaw, Block,
+  Tx,
+  TxRaw,
 } from "@btcglobe/shared/types";
-import { toMempoolState, normalizeBlock } from "@btcglobe/shared/normalize";
+import { toMempoolState, normalizeBlock, normalizeTxs } from "@btcglobe/shared/normalize";
 
 const WS_URL = "wss://mempool.space/api/v1/ws";
 const RECONNECT_MS = 5000;
@@ -21,6 +23,7 @@ export interface MempoolOptions {
   onUpdate?: (state: MempoolState) => void;  // continuous
   onBlock?: (block: Block) => void;          // discrete — the heartbeat trigger
   onError?: (err: unknown) => void;
+  onTransactions?: (txs: Tx[]) => void;
 }
 
 export class MempoolSource {
@@ -73,9 +76,19 @@ export class MempoolSource {
           this.opts.onUpdate?.(this.latest);
         }
 
+        if (Array.isArray(msg.transactions) && msg.transactions.length) {
+          this.opts.onTransactions?.(normalizeTxs(msg.transactions as TxRaw[]));
+        }
         // --- prime the tip height from the initial history (no heartbeat) ---
         if (Array.isArray(msg.blocks) && msg.blocks.length && this.lastBlockHeight === null) {
           this.lastBlockHeight = Math.max(...msg.blocks.map((b: any) => b?.height ?? 0));
+        }
+
+        if (msg.transactions) {
+          console.log(
+            "[mempool] transactions:", msg.transactions.length,
+            "sample:", JSON.stringify(msg.transactions[0]),
+          );
         }
 
         // --- discrete: a genuinely new block -> heartbeat ---

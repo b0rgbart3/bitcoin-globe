@@ -19,7 +19,8 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 export default function App() {
-  const { snapshot, mempool, mempoolRef, block } = useNetworkSocket();
+  const { snapshot, mempool, mempoolRef, block, txQueueRef, txStats } =
+    useNetworkSocket();
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -72,18 +73,32 @@ export default function App() {
                 label="pressure"
               />
             )}
+            {txStats && (
+              <Stat value={txStats.medianFeerate.toFixed(1)} label="sat/vB" />
+            )}
+            {txStats && (
+              <Stat
+                value={txStats.sinceBlock.toLocaleString()}
+                label="this block"
+              />
+            )}
+            {txStats && <Stat value={txStats.rate.toFixed(1)} label="tx/s" />}
           </div>
         ) : (
           <div className="telemetry__standby">awaiting first snapshot…</div>
         )}
       </div>
 
-      <Canvas camera={{ position: [0, 0, 6.5], fov: 35 }}>
+      <Canvas camera={{ position: [0, 0, 8.5], fov: 35 }}>
         <color attach="background" args={["#060a12"]} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[4, 2, 3]} intensity={1.1} />
         <Starfield />
-        <Globe snapshot={snapshot} mempoolRef={mempoolRef} />
+        <Globe
+          snapshot={snapshot}
+          mempoolRef={mempoolRef}
+          txQueueRef={txQueueRef}
+        />
         <Heartbeat block={block} radius={2} />
         <EffectComposer>
           <Bloom

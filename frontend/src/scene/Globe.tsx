@@ -15,13 +15,14 @@ import type { NodeSnapshot, MempoolState } from "@btcglobe/shared/types";
 import { pulseProgress } from "./blockPulse"; // new
 import { PULSE_DURATION } from "./Heartbeat";
 import { UnlocatableHalo } from "./UnlocatableHalo";
+import { TransactionStream } from "./TransactionStream";
 
 const GLOBE_RADIUS = 1.8;
 const NODE_RADIUS = GLOBE_RADIUS * 1.01;
 const NODE_BASE_SIZE = 0.05; // resting size (your tuned value)
 const FLARE_SIZE_GAIN = 2.1; // how much bigger at peak flare
-const FLARE_COLOR = new THREE.Color("#0fdeca"); // hot white-gold at peak
-const BASE_COLOR = new THREE.Color("#01a272"); // resting gold (your tuned value)
+const FLARE_COLOR = new THREE.Color("#33f7e3"); // hot white-gold at peak
+const BASE_COLOR = new THREE.Color("#29735d"); // resting gold (your tuned value)
 // Fast attack, slow decay — a flash, not a swell.
 const FLARE_ATTACK = 0.025; // fraction of the pulse spent rising to peak
 
@@ -155,7 +156,7 @@ function Graticule({ radius }: { radius: number }) {
 
   return (
     <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#21344a" transparent opacity={0.35} />{" "}
+      <lineBasicMaterial color="#21344a" transparent opacity={0.85} />{" "}
       {/* tune: graticule color/opacity */}
     </lineSegments>
   );
@@ -164,9 +165,11 @@ function Graticule({ radius }: { radius: number }) {
 export function Globe({
   snapshot,
   mempoolRef,
+  txQueueRef,
 }: {
   snapshot: NodeSnapshot | null;
   mempoolRef: MutableRefObject<MempoolState | null>;
+  txQueueRef: MutableRefObject<Tx[]>;
 }) {
   return (
     <group>
@@ -195,13 +198,14 @@ export function Globe({
 
       {snapshot && <Nodes located={snapshot.located} />}
       {snapshot && <UnlocatableHalo count={snapshot.unlocatableCount} />}
+      <TransactionStream txQueueRef={txQueueRef} baseSize={0.149} />
 
       <OrbitControls
         enablePan={false}
         minDistance={4.5}
         maxDistance={12}
         autoRotate
-        autoRotateSpeed={0.1}
+        autoRotateSpeed={0.3}
         zoomSpeed={0.08} /* default is 1.0 — lower = slower */
       />
     </group>
