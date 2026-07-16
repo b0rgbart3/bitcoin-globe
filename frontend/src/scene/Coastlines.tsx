@@ -13,17 +13,7 @@ import * as THREE from "three";
 import { mesh } from "topojson-client";
 import landTopo from "world-atlas/land-50m.json";
 
-const DEG = Math.PI / 180;
-
-function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
-  const phi = (90 - lat) * DEG;
-  const theta = (lng + 180) * DEG;
-  return new THREE.Vector3(
-    -r * Math.sin(phi) * Math.cos(theta),
-    r * Math.cos(phi),
-    r * Math.sin(phi) * Math.sin(theta),
-  );
-}
+import { latLngToVec3 } from "./geo";
 
 export function Coastlines({
   radius,

@@ -8,6 +8,7 @@ import "./App.scss";
 import { pressureFromMempool } from "./scene/pressure";
 import { Heartbeat } from "./scene/Heartbeat";
 import { useEffect, useState } from "react";
+import { SunLight } from "./scene/SunLight";
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -79,7 +80,7 @@ export default function App() {
             {txStats && (
               <Stat
                 value={txStats.sinceBlock.toLocaleString()}
-                label="this block"
+                label="TXs in block"
               />
             )}
             {txStats && <Stat value={txStats.rate.toFixed(1)} label="tx/s" />}
@@ -91,15 +92,18 @@ export default function App() {
 
       <Canvas camera={{ position: [0, 0, 8.5], fov: 35 }}>
         <color attach="background" args={["#060a12"]} />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[4, 2, 3]} intensity={1.1} />
+        <ambientLight intensity={0.25} />
+        <SunLight />
+        {/* <directionalLight position={[4, 2, 3]} intensity={1.1} /> */}
         <Starfield />
         <Globe
           snapshot={snapshot}
           mempoolRef={mempoolRef}
           txQueueRef={txQueueRef}
+          block={block}
         />
-        <Heartbeat block={block} radius={2} />
+        <Heartbeat block={block} radius={2} /> /* pulse the globe on each new
+        block */
         <EffectComposer>
           <Bloom
             luminanceThreshold={0.3}

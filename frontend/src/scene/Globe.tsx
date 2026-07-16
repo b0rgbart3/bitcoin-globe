@@ -11,11 +11,12 @@ import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
 import { Coastlines } from "./Coastlines";
 import { Atmosphere } from "./Atmosphere";
-import type { NodeSnapshot, MempoolState } from "@btcglobe/shared/types";
+import type { NodeSnapshot, MempoolState, Block } from "@btcglobe/shared/types";
 import { pulseProgress } from "./blockPulse"; // new
 import { PULSE_DURATION } from "./Heartbeat";
 import { UnlocatableHalo } from "./UnlocatableHalo";
 import { TransactionStream } from "./TransactionStream";
+import { latLngToVec3 } from "./geo";
 
 const GLOBE_RADIUS = 1.8;
 const NODE_RADIUS = GLOBE_RADIUS * 1.01;
@@ -25,16 +26,6 @@ const FLARE_COLOR = new THREE.Color("#33f7e3"); // hot white-gold at peak
 const BASE_COLOR = new THREE.Color("#29735d"); // resting gold (your tuned value)
 // Fast attack, slow decay — a flash, not a swell.
 const FLARE_ATTACK = 0.025; // fraction of the pulse spent rising to peak
-
-function latLngToVec3(lat: number, lng: number, r: number): THREE.Vector3 {
-  const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lng + 180) * (Math.PI / 180);
-  return new THREE.Vector3(
-    -r * Math.sin(phi) * Math.cos(theta),
-    r * Math.cos(phi),
-    r * Math.sin(phi) * Math.sin(theta),
-  );
-}
 
 // Soft radial sprite so each node is a glow, not a hard square.
 function makeGlowTexture(): THREE.Texture {
@@ -166,10 +157,12 @@ export function Globe({
   snapshot,
   mempoolRef,
   txQueueRef,
+  block,
 }: {
   snapshot: NodeSnapshot | null;
   mempoolRef: MutableRefObject<MempoolState | null>;
   txQueueRef: MutableRefObject<Tx[]>;
+  block: Block | null;
 }) {
   return (
     <group>
@@ -184,7 +177,7 @@ export function Globe({
         {/* tune: body color */}
       </mesh>
 
-      <Coastlines radius={GLOBE_RADIUS * 1.003} color="#06798d" opacity={0.7} />
+      <Coastlines radius={GLOBE_RADIUS * 1.003} color="#1eacc5" opacity={0.7} />
 
       <Graticule radius={GLOBE_RADIUS * 1.002} />
 
@@ -198,7 +191,11 @@ export function Globe({
 
       {snapshot && <Nodes located={snapshot.located} />}
       {snapshot && <UnlocatableHalo count={snapshot.unlocatableCount} />}
-      <TransactionStream txQueueRef={txQueueRef} baseSize={0.149} />
+      <TransactionStream
+        txQueueRef={txQueueRef}
+        baseSize={0.149}
+        block={block}
+      />
 
       <OrbitControls
         enablePan={false}

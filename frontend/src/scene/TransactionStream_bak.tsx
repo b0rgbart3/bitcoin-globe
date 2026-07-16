@@ -1,37 +1,39 @@
 // ============================================================================
 // frontend/src/scene/TransactionStream.tsx
-// Live transaction arrivals as motes that live until a block confirms them.
+// Live transaction arrivals as drifting motes.
 //
 // HONESTY NOTES:
 //  - Transactions have NO geography, so motes live in the abstract volume
 //    between globe and halo. Their positions are meaningless by construction.
+//  - This shows ARRIVALS ("each transaction as it enters"), not the ~250k
+//    pending mempool. A complete claim about a real thing, rather than a
+//    partial claim about everything.
 //  - Encoding is the treemap grammar: size <- vsize, color <- feerate.
-//    `value` (sats moved) is NEVER encoded — it decides nothing about whether a
-//    transaction gets mined, so it decides nothing visual here.
-//  - A mote dies when a block CONFIRMS it, not on a timer. Fate is decided by
-//    real data: block.feeRange[0] is the lowest feerate that made it in, and
-//    miners fill greedily by feerate, so motes at/above that were included.
-//  - LIMITS: the feed is a rolling window (we may miss arrivals during bursts),
-//    feeRange[0] is an approximation (CPFP/package relay/RBF blur it), and
-//    MAX_MOTES caps the swarm — so this UNDERSTATES the true ~250k backlog.
-//    It is a window on arrivals, never the whole mempool.
+//    `value` (sats moved) is NEVER encoded — it decides nothing about whether
+//    a transaction gets mined, so it decides nothing visual here either.
 // ============================================================================
 
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import type { Tx, Block } from "@btcglobe/shared/types";
+import type { Block, Tx } from "@btcglobe/shared/types";
 
-const MAX_MOTES = 3000; // ~14 min of arrivals at ~3.5/s
-const FADE_IN = 0.6; // seconds to appear
-const HARVEST_FADE = 2.6; // seconds to flare and wink out once confirmed
-const R_MIN = 2.35; // just outside the atmosphere
-const R_MAX = 2.7; // just inside the halo band
+const MAX_MOTES = 3000; // ring buffer; ~4/s * 15s life leaves plenty of room
+// const LIFE = 24; // seconds a mote lives
 
-// Feerate -> color, log scale (feerates span ~1 to 1000+ sat/vB).
-const COOL = new THREE.Color("#ffdf6a"); // low feerate — patient, cheap
-const MID = new THREE.Color("#ff9b04"); // mid
-const HOT = new THREE.Color("#ff1b0b"); // high feerate — urgent, paying up
+const FADE_OUT = 4.0;
+const HARVEST_FADE = 1.6; // how long a confirmed mote takes to wink out
+const FADE_IN = 0.6;
+
+const R_MIN = 2.55; // just outside the atmosphere
+const R_MAX = 2.85; // just inside the halo band
+
+// Feerate -> color. Log scale: feerates span ~1 to 1000+ sat/vB, and the
+// interesting variation is at the low end.
+const COOL = new THREE.Color("#0ed8e3"); // low feerate — patient, cheap
+const MID = new THREE.Color("#09e0e0"); // mid — matches the node hue
+const HOT = new THREE.Color("#20bcff"); // high feerate — urgent, paying up
+const tmpSize = new THREE.Vector2();
 
 function feerateColor(rate: number, out: THREE.Color): THREE.Color {
   const t = THREE.MathUtils.clamp(
@@ -52,7 +54,7 @@ function vsizeToSize(vsize: number, base: number): number {
 interface Mote {
   born: number;
   pos: THREE.Vector3;
-  axis: THREE.Vector3; // drift axis — motion without implied direction
+  axis: THREE.Vector3;
   speed: number;
   size: number;
   color: THREE.Color;
@@ -60,38 +62,49 @@ interface Mote {
   harvestedAt: number | null; // set when a block confirms it
 }
 
-const tmpSize = new THREE.Vector2();
-
 export function TransactionStream({
   txQueueRef,
+  baseSize = 0.05,
+  opacity = 0.9,
   block,
-  baseSize = 0.01,
-  opacity = 0.7,
 }: {
   txQueueRef: MutableRefObject<Tx[]>;
-  block: Block | null;
   baseSize?: number;
   opacity?: number;
+  block: Block | null; // used to harvest motes that were included in the block
 }) {
-  const motes = useRef<(Mote | undefined)[]>(
-    new Array(MAX_MOTES).fill(undefined),
-  );
+  const motes = useRef<Mote[]>([]);
   const cursor = useRef(0);
   const geomRef = useRef<THREE.BufferGeometry>(null);
   const lastHash = useRef<string | null>(null);
   const pendingHarvest = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (!block || block.hash === lastHash.current) return;
+    lastHash.current = block.hash;
+    // The lowest feerate that made it into this block. Miners fill greedily by
+    // feerate, so motes at or above this were (very likely) included.
+    pendingHarvest.current = block.feeRange[0] ?? 0;
+  }, [block]);
+
   const { positions, colors, sizes, alphas, texture } = useMemo(() => {
-    const s = 64;
+    const size = 64;
     const c = document.createElement("canvas");
-    c.width = c.height = s;
+    c.width = c.height = size;
     const ctx = c.getContext("2d")!;
-    const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    const g = ctx.createRadialGradient(
+      size / 2,
+      size / 2,
+      0,
+      size / 2,
+      size / 2,
+      size / 2,
+    );
     g.addColorStop(0, "rgba(255,255,255,1)");
     g.addColorStop(0.4, "rgba(255,255,255,0.55)");
     g.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, s, s);
+    ctx.fillRect(0, 0, size, size);
     return {
       positions: new Float32Array(MAX_MOTES * 3),
       colors: new Float32Array(MAX_MOTES * 3),
@@ -109,7 +122,7 @@ export function TransactionStream({
         uniforms: {
           uTex: { value: texture },
           uOpacity: { value: opacity },
-          uScale: { value: 300 }, // overwritten every frame in useFrame
+          uScale: { value: 300 },
         },
         vertexShader: `
           attribute float aSize;
@@ -141,74 +154,48 @@ export function TransactionStream({
     [texture, opacity],
   );
 
-  // A new block confirms every pending tx at or above its lowest included feerate.
-  useEffect(() => {
-    if (!block || block.hash === lastHash.current) return;
-    lastHash.current = block.hash;
-    pendingHarvest.current = block.feeRange[0] ?? 0;
-  }, [block]);
-
   useFrame((state, dt) => {
-    const now = state.clock.elapsedTime;
-
-    // Match Three's own size attenuation so baseSize is comparable to node size.
     material.uniforms.uScale.value =
       state.gl.getDrawingBufferSize(tmpSize).height * 0.5;
+    const now = state.clock.elapsedTime;
 
-    // 1. Drain arrivals -> one mote per real transaction.
+    // 1. Drain arrivals -> spawn one mote per real transaction.
     const queue = txQueueRef.current;
     if (queue.length) {
       for (const tx of queue) {
         const dir = new THREE.Vector3().randomDirection();
         const r = R_MIN + Math.random() * (R_MAX - R_MIN);
-        motes.current[cursor.current] = {
+        const m: Mote = {
           born: now,
           pos: dir.multiplyScalar(r),
           axis: new THREE.Vector3().randomDirection(),
-          speed: 0.14 + Math.random() * 0.05,
+          speed: 0.24 + Math.random() * 0.05,
           size: vsizeToSize(tx.vsize, baseSize),
           color: feerateColor(tx.feerate, new THREE.Color()),
-          feerate: tx.feerate,
-          harvestedAt: null,
         };
+        motes.current[cursor.current] = m;
         cursor.current = (cursor.current + 1) % MAX_MOTES;
       }
+      // if (queue.length) console.log("[stream] spawning", queue.length, "motes");
       queue.length = 0; // consumed
     }
 
-    // 2. A block landed -> mark everything it (very likely) included.
-    if (pendingHarvest.current !== null) {
-      const cutoff = pendingHarvest.current;
-      for (const m of motes.current) {
-        if (m && m.harvestedAt === null && m.feerate >= cutoff)
-          m.harvestedAt = now;
-      }
-      pendingHarvest.current = null;
-    }
-
-    // 3. Advance + write buffers.
+    // 2. Advance + write buffers.
     for (let i = 0; i < MAX_MOTES; i++) {
       const m = motes.current[i];
-      if (!m) {
+      const age = m ? now - m.born : Infinity;
+
+      if (!m || age > LIFE) {
         alphas[i] = 0;
         continue;
       }
-
-      if (m.harvestedAt !== null) {
-        const h = (now - m.harvestedAt) / HARVEST_FADE;
-        if (h >= 1) {
-          motes.current[i] = undefined; // confirmed and gone
-          alphas[i] = 0;
-          continue;
-        }
-        alphas[i] = 1 - h; // flare, then out
-        sizes[i] = m.size * (1 + 1.6 * Math.pow(1 - h, 3));
-      } else {
-        alphas[i] = Math.min((now - m.born) / FADE_IN, 1); // pending: waits
-        sizes[i] = m.size;
-      }
-
+      // Slow orbital drift — motion without implied direction.
       m.pos.applyAxisAngle(m.axis, m.speed * dt);
+
+      const fadeIn = Math.min(age / FADE_IN, 1);
+      const fadeOut = Math.min((LIFE - age) / FADE_OUT, 1);
+      alphas[i] = fadeIn * fadeOut;
+      sizes[i] = m.size;
       positions[i * 3] = m.pos.x;
       positions[i * 3 + 1] = m.pos.y;
       positions[i * 3 + 2] = m.pos.z;
