@@ -9,6 +9,7 @@ import { pressureFromMempool } from "./scene/pressure";
 import { Heartbeat } from "./scene/Heartbeat";
 import { useEffect, useState } from "react";
 import { SunLight } from "./scene/SunLight";
+import { AboutModal } from "./AboutModal";
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -20,9 +21,17 @@ function Stat({ value, label }: { value: string; label: string }) {
 }
 
 export default function App() {
-  const { snapshot, mempool, mempoolRef, block, txQueueRef, txStats } =
-    useNetworkSocket();
+  const {
+    snapshot,
+    mempool,
+    mempoolRef,
+    block,
+    txQueueRef,
+    txStats,
+    connected,
+  } = useNetworkSocket();
   const [elapsed, setElapsed] = useState(0);
+  const [aboutOpen, setAboutOpen] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -34,7 +43,18 @@ export default function App() {
   return (
     <div className="app">
       <div className="telemetry">
-        <div className="telemetry__title">Bitcoin Network · Live</div>
+        <div className="telemetry__title">
+          Bitcoin Network{" "}
+          <span
+            className={
+              connected
+                ? "telemetry__status--live"
+                : "telemetry__status--offline"
+            }
+          >
+            · {connected ? "Live" : "Offline"}
+          </span>
+        </div>
         {snapshot ? (
           <div className="telemetry__readout">
             {block && (
@@ -86,9 +106,19 @@ export default function App() {
             {txStats && <Stat value={txStats.rate.toFixed(1)} label="tx/s" />}
           </div>
         ) : (
-          <div className="telemetry__standby">awaiting first snapshot…</div>
+          <div className="telemetry__standby">
+            {connected
+              ? "awaiting first snapshot…"
+              : "live feed unavailable · reconnecting…"}
+          </div>
         )}
       </div>
+
+      <button className="about-btn" onClick={() => setAboutOpen(true)}>
+        About
+      </button>
+
+      {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
 
       <Canvas camera={{ position: [0, 0, 8.5], fov: 35 }}>
         <color attach="background" args={["#060a12"]} />

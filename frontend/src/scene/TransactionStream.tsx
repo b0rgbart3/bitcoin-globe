@@ -29,9 +29,9 @@ const R_MIN = 2.35; // just outside the atmosphere
 const R_MAX = 2.7; // just inside the halo band
 
 // Feerate -> color, log scale (feerates span ~1 to 1000+ sat/vB).
-const COOL = new THREE.Color("#ffdf6a"); // low feerate — patient, cheap
-const MID = new THREE.Color("#ff9b04"); // mid
-const HOT = new THREE.Color("#ff1b0b"); // high feerate — urgent, paying up
+const COOL = new THREE.Color("#6af0ff"); // low feerate — patient, cheap
+const MID = new THREE.Color("#04a3ff"); // mid
+const HOT = new THREE.Color("#4c00fd"); // high feerate — urgent, paying up
 
 function feerateColor(rate: number, out: THREE.Color): THREE.Color {
   const t = THREE.MathUtils.clamp(
@@ -66,7 +66,7 @@ export function TransactionStream({
   txQueueRef,
   block,
   baseSize = 0.01,
-  opacity = 0.7,
+  opacity = 0.9,
 }: {
   txQueueRef: MutableRefObject<Tx[]>;
   block: Block | null;

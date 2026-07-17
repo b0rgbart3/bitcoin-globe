@@ -164,6 +164,11 @@ export function Globe({
   txQueueRef: MutableRefObject<Tx[]>;
   block: Block | null;
 }) {
+  // Persist the last known count so the halo stays visible when disconnected.
+  // Seed with a realistic fallback so it renders immediately on first load too.
+  const lastUnlocatableCount = useRef(15000);
+  if (snapshot) lastUnlocatableCount.current = snapshot.unlocatableCount;
+
   return (
     <group>
       {/* dark, light-reactive body — shows the terminator as it rotates */}
@@ -190,7 +195,7 @@ export function Globe({
       />
 
       {snapshot && <Nodes located={snapshot.located} />}
-      {snapshot && <UnlocatableHalo count={snapshot.unlocatableCount} />}
+      <UnlocatableHalo count={snapshot?.unlocatableCount ?? lastUnlocatableCount.current} />
       <TransactionStream
         txQueueRef={txQueueRef}
         baseSize={0.149}
