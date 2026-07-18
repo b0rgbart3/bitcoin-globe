@@ -14,10 +14,11 @@ It is built on one rule: **the aesthetic is the information.** Every moving, glo
 | ---------------------- | --------------------------------------------- | -------------------------------------------------------------------------- |
 | **Node globe**         | Reachable Bitcoin nodes with a locatable IP   | Pale green points at real lat/lng                                          |
 | **Unlocatable halo**   | Reachable nodes with **no** coordinates (Tor) | Pale green points in a tumbling off-globe band                             |
-| **Transaction stream** | Each transaction as it enters the mempool     | Size ← vsize · Colour ← feerate (yellow → orange → dark orange)            |
+| **Transaction stream** | Each transaction as it enters the mempool     | Size ← vsize · Colour ← feerate · Orbital radius ← feerate rank            |
 | **Atmosphere**         | Aggregate mempool pressure                    | Fresnel shell brightness ← pending vBytes + intake rate                    |
 | **Block heartbeat**    | A block being mined                           | A cool teal flare across all nodes + expanding shockwave                   |
 | **Sunlight**           | Real time of day                              | Directional light at the true subsolar point                               |
+| **Moon**               | The real Moon at its current position         | Phase ← sunlight geometry · Size ← exact proportion · Position ← sublunar point |
 | **Telemetry**          | Live figures                                  | Located · unlocatable · height · pending vMB · tx/s · sat/vB · since block |
 
 ---
@@ -34,7 +35,7 @@ Nodes are different: they're physical machines with IP addresses that can be geo
 
 - **Nodes** → placed on the sphere at real coordinates.
 - **Unlocatable nodes** → a band around the globe, uniformly random, tumbling on drifting axes. Any position on it is meaningless _by design_ — the motion exists so no fixed frame can be read into it.
-- **Transactions** → motes drifting in the abstract volume between globe and halo. Position carries no information.
+- **Transactions** → motes drifting in the abstract volume between globe and halo. Their angular position and orbital direction carry no information; only their distance from the globe does (see below).
 
 ### Size is vsize. Colour is feerate. Value is never encoded.
 
@@ -43,7 +44,18 @@ A transaction moving 500 BTC and one moving 5,000 sats look **identical** if the
 - **size ← vsize** — how much block space it consumes (driven by input/output count, not amount)
 - **colour ← feerate** — what it pays per unit of that space
 
-The amount transferred appears nowhere in the visuals. A big dark-orange mote is a _large transaction paying a high rate_ — usually a consolidation or an inscription — not a whale moving a fortune.
+The amount transferred appears nowhere in the visuals. A big high-fee mote is a _large transaction paying a high rate_ — usually a consolidation or an inscription — not a whale moving a fortune.
+
+### Orbital radius is queue position — and it tracks the live market
+
+The mempool isn't a queue you advance through by waiting; it's a **continuous auction**. Your feerate is fixed the moment you broadcast, but your _rank_ isn't — higher-fee transactions keep arriving and jump ahead of you. So a transaction's feerate _is_ its distance from being mined, and that maps to orbital radius:
+
+- **High feerate → inner orbit**, tight against the atmosphere — next in line.
+- **Low feerate → outer orbit**, drifting far out — waiting, possibly for a long time.
+
+Crucially, the radius is normalized against the **live fee ladder** (`fees.minimum` → `fees.fastest`, which arrive continuously on the stats feed), not a fixed scale. Your feerate never changes, but your radius does — because your position in the auction moves as the market moves. A mote doesn't inch inward by being patient; it only moves in if the market comes _down to meet it_. During congestion the whole cloud holds its stratified shells; during a genuine lull the ladder compresses and previously-stranded transactions visibly draw inward as they become minable. On a calm night where nearly every transaction pays the floor rate, there is almost no spread — so the cloud collapses to a single shell, which is the honest picture of a network where nobody needs to compete.
+
+Speed is derived from radius (inner orbits are quicker), but it carries no _independent_ information — it's the same feerate fact that colour and radius already show, used only to make the shells feel alive. Each mote holds its own randomly-oriented orbit for life, so the swarm has no net direction: order without orientation.
 
 ### Nothing predicts a block, because nothing can
 
@@ -57,7 +69,19 @@ Block fullness is `weight / 4,000,000`, not size in MB. SegWit discounts witness
 
 ### Motes die when a block confirms them, not on a timer
 
-A transaction's real lifetime runs from arrival to confirmation — an _event_, not a duration. Each block reports `feeRange[0]`, the lowest feerate it included; miners fill greedily by feerate, so every pending mote at or above that threshold flares and vanishes at the pulse. The cool low-fee stragglers keep drifting, still waiting — because in reality, they are.
+A transaction's real lifetime runs from arrival to confirmation — an _event_, not a duration. Each block reports `feeRange[0]`, the lowest feerate it included; miners fill greedily by feerate, so every pending mote at or above that threshold flares and vanishes at the pulse. Because feerate is also radius, the block eats the cloud from the **inside out**: the inner high-fee shell flashes away while the cool low-fee stragglers keep drifting, still waiting — because in reality, they are.
+
+### The Moon phase is not drawn — it falls out
+
+The Moon is placed at the real sublunar point — the geographic coordinates directly beneath it — using `astronomy-engine` (NASA, DE405-accuracy) to compute the geocentric equatorial vector and Greenwich Sidereal Time to convert it to longitude. Position is recomputed every 30 seconds; the Moon moves ~0.018° in that window, well below any perceptible threshold.
+
+Phase is never computed or painted. The scene already has a directional light at the true subsolar point. When that light hits a sphere placed at the correct lunar position, the illuminated arc facing Earth is the crescent, gibbous, or full disk that matches tonight's sky. The shader doesn't know it's drawing a phase — it's just lighting a sphere.
+
+Two things are accurate and one is deliberately wrong:
+
+- **Direction** — astronomically correct to the arcminute.
+- **Size** — the Moon's radius is 0.2727× Earth's, and the scene uses that exact ratio.
+- **Distance** — the true distance is ~60 Earth-radii, which puts the Moon far off-screen at this scene scale. The scene distance is compressed to keep both objects in the same view. The direction (and therefore the phase) is unaffected; only the distance is a lie.
 
 ### The visualization discloses its own blind spots
 
@@ -98,6 +122,7 @@ Watch it long enough and it argues with several things people believe about Bitc
 | Data sources       | [mempool.space](https://mempool.space) WebSocket · [Bitnodes](https://bitnodes.io)-format node snapshot |
 | Geo data           | `world-atlas` + `topojson-client`                                                                       |
 | Solar position     | NOAA subsolar-point approximation (no API)                                                              |
+| Lunar position     | `astronomy-engine` (NASA, MIT) — DE405-accuracy geocentric equatorial coords + GMST                    |
 | Monorepo           | npm workspaces                                                                                          |
 
 ### Architecture
@@ -134,7 +159,7 @@ bitcoin-globe/
 │   └── fixtures/
 └── frontend/        # React + Three.js
     └── src/scene/   # Globe · Coastlines · Atmosphere · Heartbeat ·
-                     # UnlocatableHalo · TransactionStream · SunLight · Starfield
+                     # UnlocatableHalo · TransactionStream · SunLight · Starfield · Moon
 ```
 
 ## Prerequisites

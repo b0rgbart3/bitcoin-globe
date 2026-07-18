@@ -85,6 +85,10 @@ export function AboutModal({ onClose }: Props) {
                 <td className="about-panel__table-key">Sunlight</td>
                 <td>Real time of day — directional light positioned at the true subsolar point via NOAA approximation</td>
               </tr>
+              <tr>
+                <td className="about-panel__table-key">Moon</td>
+                <td>The real Moon at its current position — phase from sunlight geometry, size from exact proportion, position from the sublunar point</td>
+              </tr>
             </tbody>
           </table>
 
@@ -138,6 +142,27 @@ export function AboutModal({ onClose }: Props) {
             an inscription — not necessarily a large-value transfer.
           </p>
 
+          <h3 className="about-panel__subsection">Orbital Radius is Queue Position — and It Tracks the Live Market</h3>
+          <p>
+            The mempool isn't a queue you advance through by waiting; it's a <em>continuous auction</em>.
+            Your feerate is fixed the moment you broadcast, but your <em>rank</em> isn't — higher-fee
+            transactions keep arriving and jump ahead. So feerate maps directly to orbital radius:
+          </p>
+          <ul className="about-panel__list">
+            <li><strong>High feerate → inner orbit</strong>, tight against the atmosphere — next in line.</li>
+            <li><strong>Low feerate → outer orbit</strong>, drifting far out — waiting, possibly for a long time.</li>
+          </ul>
+          <p>
+            Crucially, radius is normalized against the <em>live fee ladder</em> (minimum → fastest),
+            not a fixed scale. Your feerate never changes, but your radius does — because your position
+            in the auction moves as the market moves. A mote doesn't inch inward by being patient; it
+            only moves in if the market comes <em>down to meet it</em>. During congestion the stratified
+            shells hold; during a genuine lull the ladder compresses and previously-stranded transactions
+            visibly draw inward as they become minable. On a calm night where nearly every transaction
+            pays the floor rate, the cloud collapses to a single shell — which is the honest picture of
+            a network where nobody needs to compete.
+          </p>
+
           <h3 className="about-panel__subsection">Nothing Predicts a Block, Because Nothing Can</h3>
           <p>
             Mining is memoryless. Every hash is an independent lottery ticket — if nine minutes have
@@ -166,6 +191,26 @@ export function AboutModal({ onClose }: Props) {
             flares and vanishes at the pulse. The low-fee stragglers keep drifting — because in
             reality, they are still waiting.
           </p>
+
+          <h3 className="about-panel__subsection">The Moon Phase is Not Drawn — It Falls Out</h3>
+          <p>
+            The Moon is placed at the real sublunar point — the geographic coordinates directly beneath
+            it — using <code>astronomy-engine</code> (NASA, DE405 accuracy) to compute its geocentric
+            position and Greenwich Sidereal Time to convert that to a longitude. Position is recomputed
+            every 30 seconds; the Moon moves ~0.018° in that window, well below any perceptible threshold.
+          </p>
+          <p>
+            Phase is never computed or painted. The scene already has a directional light at the true
+            subsolar point. When that light hits a sphere placed at the correct lunar position, the
+            illuminated arc facing Earth is the crescent, gibbous, or full disk that matches tonight's
+            sky. The shader doesn't know it's drawing a phase — it's just lighting a sphere.
+          </p>
+          <p>Two things are accurate and one is deliberately wrong:</p>
+          <ul className="about-panel__list">
+            <li><strong>Direction</strong> — astronomically correct to the arcminute.</li>
+            <li><strong>Size</strong> — the Moon's radius is 0.2727× Earth's, and the scene uses that exact ratio.</li>
+            <li><strong>Distance</strong> — the true distance is ~60 Earth-radii, which puts the Moon far off-screen at this scene scale. The distance is compressed to keep both objects in the same view. The direction and phase are unaffected; only the distance is a lie.</li>
+          </ul>
 
           {/* ── Blind spots ─────────────────────────────────────────── */}
           <h2 className="about-panel__section">What This Visualization Discloses About Itself</h2>
