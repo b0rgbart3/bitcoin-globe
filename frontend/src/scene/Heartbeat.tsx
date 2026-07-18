@@ -59,7 +59,13 @@ export function Heartbeat({
   );
 
   useEffect(() => {
-    if (!block || block.hash === lastHashRef.current) return;
+    if (!block) return;
+    if (lastHashRef.current === null) {
+      // First block on connect is the server's current-state snapshot, not a new event.
+      lastHashRef.current = block.hash;
+      return;
+    }
+    if (block.hash === lastHashRef.current) return;
     lastHashRef.current = block.hash;
     pendingRef.current = true;
   }, [block]);

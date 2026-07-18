@@ -195,10 +195,12 @@ export function Globe({
       />
 
       {snapshot && <Nodes located={snapshot.located} />}
-      <UnlocatableHalo count={snapshot?.unlocatableCount ?? lastUnlocatableCount.current} />
+      <UnlocatableHalo
+        count={snapshot?.unlocatableCount ?? lastUnlocatableCount.current}
+      />
       <TransactionStream
         txQueueRef={txQueueRef}
-        baseSize={0.149}
+        mempoolRef={mempoolRef}
         block={block}
       />
 

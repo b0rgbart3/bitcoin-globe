@@ -7,11 +7,12 @@
 // ============================================================================
 
 import { WebSocketServer, WebSocket } from "ws";
-import type { ServerMessage, NodeSnapshot } from "@btcglobe/shared/types";
+import type { ServerMessage, NodeSnapshot, Block } from "@btcglobe/shared/types";
 
 export interface GatewayOptions {
     port: number;
-    getInitial?: () => NodeSnapshot | null; // sent to each client the moment it connects
+    getInitial?: () => NodeSnapshot | null;
+    getLastBlock?: () => Block | null;
 }
 
 export class Gateway {
@@ -23,6 +24,8 @@ export class Gateway {
         this.wss.on("connection", (ws) => {
             const snap = opts.getInitial?.();
             if (snap) this.sendTo(ws, { type: "nodes", data: snap });
+            const block = opts.getLastBlock?.();
+            if (block) this.sendTo(ws, { type: "block", data: block });
             console.log(`[gateway] client connected (${this.wss.clients.size} total)`);
             ws.on("close", () =>
                 console.log(`[gateway] client left (${this.wss.clients.size} total)`),

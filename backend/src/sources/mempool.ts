@@ -35,11 +35,16 @@ export class MempoolSource {
   private vbps = 0;
   private fees: FeeEstimatesRaw = ZERO_FEES;
   private lastBlockHeight: number | null = null;
+  private lastBlock: Block | null = null;
 
   constructor(private readonly opts: MempoolOptions = {}) { }
 
   getLatest(): MempoolState | null {
     return this.latest;
+  }
+
+  getLastBlock(): Block | null {
+    return this.lastBlock;
   }
 
   start(): void {
@@ -96,6 +101,7 @@ export class MempoolSource {
           const block = normalizeBlock(msg.block as BlockRaw);
           if (this.lastBlockHeight === null || block.height > this.lastBlockHeight) {
             this.lastBlockHeight = block.height;
+            this.lastBlock = block;
             this.opts.onBlock?.(block);
             console.log(`[mempool] new block ${block.height} · ${block.txCount} txs · ${block.pool.name}`);
           }

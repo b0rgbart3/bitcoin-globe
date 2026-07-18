@@ -20,18 +20,33 @@
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import type { Tx, Block } from "@btcglobe/shared/types";
+import type { Tx, Block, MempoolState } from "@btcglobe/shared/types";
 
 const MAX_MOTES = 3000; // ~14 min of arrivals at ~3.5/s
 const FADE_IN = 0.6; // seconds to appear
 const HARVEST_FADE = 2.6; // seconds to flare and wink out once confirmed
-const R_MIN = 2.35; // just outside the atmosphere
-const R_MAX = 2.7; // just inside the halo band
+const R_INNER = 2.35; // high feerate — next in line
+const R_OUTER = 3.0; // low feerate — waiting
 
 // Feerate -> color, log scale (feerates span ~1 to 1000+ sat/vB).
-const COOL = new THREE.Color("#6af0ff"); // low feerate — patient, cheap
-const MID = new THREE.Color("#04a3ff"); // mid
-const HOT = new THREE.Color("#4c00fd"); // high feerate — urgent, paying up
+const COOL = new THREE.Color("#7bfbfb"); // low feerate — deep, dim, receding
+const MID = new THREE.Color("#04a3ff"); // mid — your blue, unchanged
+const HOT = new THREE.Color("#a78bff"); // high feerate — electric, advancing
+
+// Feerate -> orbital radius. Distance from the globe IS distance from being
+// mined. Normalized against the LIVE fee ladder, so "inner = next block" stays
+// true as fee conditions change rather than being an arbitrary fixed scale.
+function radiusForFeerate(feerate: number, m: MempoolState | null): number {
+  const lo = Math.max(m?.fees.minimum ?? 1, 0.1);
+  const hi = Math.max(m?.fees.fastest ?? 50, lo * 2);
+  const t = THREE.MathUtils.clamp(
+    (Math.log(Math.max(feerate, lo)) - Math.log(lo)) /
+      (Math.log(hi) - Math.log(lo)),
+    0,
+    1,
+  );
+  return R_OUTER - (R_OUTER - R_INNER) * t;
+}
 
 function feerateColor(rate: number, out: THREE.Color): THREE.Color {
   const t = THREE.MathUtils.clamp(
@@ -39,9 +54,13 @@ function feerateColor(rate: number, out: THREE.Color): THREE.Color {
     0,
     1,
   );
-  return t < 0.5
-    ? out.copy(COOL).lerp(MID, t * 2)
-    : out.copy(MID).lerp(HOT, (t - 0.5) * 2);
+  const fColor =
+    t < 0.5
+      ? out.copy(COOL).lerp(MID, t * 2)
+      : out.copy(MID).lerp(HOT, (t - 0.5) * 2);
+
+  // console.log("fColor: ", fColor);
+  return fColor;
 }
 
 // vsize -> point size. sqrt so a 10x bigger tx isn't a 10x bigger dot.
@@ -58,17 +77,20 @@ interface Mote {
   color: THREE.Color;
   feerate: number; // decides its fate at the next block
   harvestedAt: number | null; // set when a block confirms it
+  logFeerate: number;
 }
 
 const tmpSize = new THREE.Vector2();
 
 export function TransactionStream({
   txQueueRef,
+  mempoolRef,
   block,
-  baseSize = 0.01,
+  baseSize = 0.1,
   opacity = 0.9,
 }: {
   txQueueRef: MutableRefObject<Tx[]>;
+  mempoolRef: MutableRefObject<MempoolState | null>;
   block: Block | null;
   baseSize?: number;
   opacity?: number;
@@ -143,7 +165,13 @@ export function TransactionStream({
 
   // A new block confirms every pending tx at or above its lowest included feerate.
   useEffect(() => {
-    if (!block || block.hash === lastHash.current) return;
+    if (!block) return;
+    if (lastHash.current === null) {
+      // First block on connect is the server's current-state snapshot, not a new event.
+      lastHash.current = block.hash;
+      return;
+    }
+    if (block.hash === lastHash.current) return;
     lastHash.current = block.hash;
     pendingHarvest.current = block.feeRange[0] ?? 0;
   }, [block]);
@@ -155,25 +183,36 @@ export function TransactionStream({
     material.uniforms.uScale.value =
       state.gl.getDrawingBufferSize(tmpSize).height * 0.5;
 
+    // The live fee ladder — needed by BOTH spawning and the per-frame radius
+    // tracking, so it lives at the top of the frame, not inside the drain block.
+    const mp = mempoolRef.current;
+    const lo = Math.max(mp?.fees.minimum ?? 1, 0.1);
+    const hi = Math.max(mp?.fees.fastest ?? 50, lo * 2);
+    const logLo = Math.log(lo);
+    const logSpan = Math.log(hi) - logLo;
+
     // 1. Drain arrivals -> one mote per real transaction.
     const queue = txQueueRef.current;
     if (queue.length) {
       for (const tx of queue) {
-        const dir = new THREE.Vector3().randomDirection();
-        const r = R_MIN + Math.random() * (R_MAX - R_MIN);
+        const r = radiusForFeerate(tx.feerate, mp);
         motes.current[cursor.current] = {
           born: now,
-          pos: dir.multiplyScalar(r),
+          pos: new THREE.Vector3().randomDirection().multiplyScalar(r),
+          // Fully random orbital plane: for every mote circling one way there's a
+          // statistically equal one circling the other, so the cloud has NO net
+          // direction. The axis carries no information — the RADIUS does.
           axis: new THREE.Vector3().randomDirection(),
-          speed: 0.14 + Math.random() * 0.05,
+          speed: 0.09 * Math.pow(R_OUTER / r, 0.5), // <-- keep your reduced value
           size: vsizeToSize(tx.vsize, baseSize),
           color: feerateColor(tx.feerate, new THREE.Color()),
           feerate: tx.feerate,
+          logFeerate: Math.log(Math.max(tx.feerate, 0.1)),
           harvestedAt: null,
         };
         cursor.current = (cursor.current + 1) % MAX_MOTES;
       }
-      queue.length = 0; // consumed
+      queue.length = 0;
     }
 
     // 2. A block landed -> mark everything it (very likely) included.
@@ -189,6 +228,12 @@ export function TransactionStream({
     // 3. Advance + write buffers.
     for (let i = 0; i < MAX_MOTES; i++) {
       const m = motes.current[i];
+      if (i < 5 && m && Math.random() < 0.01) {
+        // console.log(
+        //   `fee ${m.feerate.toFixed(1)}  logF ${m.logFeerate.toFixed(2)}  r ${m.pos.length().toFixed(2)}  ladder[${logLo.toFixed(2)}..${(logLo + logSpan).toFixed(2)}]`,
+        // );
+      }
+
       if (!m) {
         alphas[i] = 0;
         continue;
@@ -204,11 +249,18 @@ export function TransactionStream({
         alphas[i] = 1 - h; // flare, then out
         sizes[i] = m.size * (1 + 1.6 * Math.pow(1 - h, 3));
       } else {
-        alphas[i] = Math.min((now - m.born) / FADE_IN, 1); // pending: waits
+        alphas[i] = Math.min((now - m.born) / FADE_IN, 1); // pending: holds its bid
         sizes[i] = m.size;
       }
 
       m.pos.applyAxisAngle(m.axis, m.speed * dt);
+
+      // Radius tracks the LIVE fee ladder: your feerate is fixed, but your position
+      // in the auction is not. Damped, so shells drift rather than snap.
+      const t = THREE.MathUtils.clamp((m.logFeerate - logLo) / logSpan, 0, 1);
+      const targetR = R_OUTER - (R_OUTER - R_INNER) * t;
+      m.pos.setLength(THREE.MathUtils.damp(m.pos.length(), targetR, 0.6, dt));
+
       positions[i * 3] = m.pos.x;
       positions[i * 3 + 1] = m.pos.y;
       positions[i * 3 + 2] = m.pos.z;

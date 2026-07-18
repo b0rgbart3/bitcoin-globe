@@ -9,6 +9,7 @@ let bitnodes: BitnodesSource;
 const gateway = new Gateway({
     port: 8787,
     getInitial: () => bitnodes?.getLatest() ?? null,
+    getLastBlock: () => mempool.getLastBlock(),
 });
 
 // bitnodes = new BitnodesSource({
