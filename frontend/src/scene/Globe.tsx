@@ -21,9 +21,9 @@ import { latLngToVec3 } from "./geo";
 const GLOBE_RADIUS = 1.8;
 const NODE_RADIUS = GLOBE_RADIUS * 1.01;
 const NODE_BASE_SIZE = 0.05; // resting size (your tuned value)
-const FLARE_SIZE_GAIN = 2.1; // how much bigger at peak flare
-const FLARE_COLOR = new THREE.Color("#33f7e3"); // hot white-gold at peak
-const BASE_COLOR = new THREE.Color("#29735d"); // resting gold (your tuned value)
+const FLARE_SIZE_GAIN = 3.1; // how much bigger at peak flare
+const FLARE_COLOR = new THREE.Color("#33f7e3"); // bright light teal
+const BASE_COLOR = new THREE.Color("#037862"); // teal
 // Fast attack, slow decay — a flash, not a swell.
 const FLARE_ATTACK = 0.025; // fraction of the pulse spent rising to peak
 
@@ -206,7 +206,7 @@ export function Globe({
 
       <OrbitControls
         enablePan={false}
-        minDistance={4.5}
+        minDistance={5.9}
         maxDistance={30}
         autoRotate
         autoRotateSpeed={0.3}

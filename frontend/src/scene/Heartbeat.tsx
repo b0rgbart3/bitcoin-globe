@@ -11,7 +11,7 @@ import { useFrame } from "@react-three/fiber";
 import type { Block } from "@btcglobe/shared/types";
 import { firePulse, pulseProgress } from "./blockPulse";
 
-export const PULSE_DURATION = 2.8; // shared by the flare — keep in one place
+export const PULSE_DURATION = 5.5; // shared by the flare — keep in one place
 const START_SCALE = 0.8;
 const END_SCALE = 3.7;
 const PEAK_OPACITY = 1.0; // <-- YOUR TUNED VALUE
