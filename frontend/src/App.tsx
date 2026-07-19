@@ -68,6 +68,7 @@ export default function App() {
   } = useNetworkSocket();
   const [elapsed, setElapsed] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(true);
 
   // Use whichever source has the higher value: snapshot updates continuously,
   // block fires immediately on confirmation but persists stale across reconnects.
@@ -98,6 +99,7 @@ export default function App() {
             · {connected ? "Live" : "Offline"}
           </span>
         </div>
+        <div className={`telemetry__body${statsOpen ? "" : " telemetry__body--hidden"}`}>
         {snapshot ? (
           <div className="telemetry__readout">
             {block && (
@@ -181,8 +183,15 @@ export default function App() {
               : "live feed unavailable · reconnecting…"}
           </div>
         )}
+        </div>
       </div>
 
+      <button
+        className={`stats-btn${statsOpen ? " stats-btn--active" : ""}`}
+        onClick={() => setStatsOpen((v) => !v)}
+      >
+        Stats
+      </button>
       <button className="about-btn" onClick={() => setAboutOpen(true)}>
         About
       </button>

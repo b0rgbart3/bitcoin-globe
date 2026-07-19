@@ -203,7 +203,7 @@ export function TransactionStream({
           // statistically equal one circling the other, so the cloud has NO net
           // direction. The axis carries no information — the RADIUS does.
           axis: new THREE.Vector3().randomDirection(),
-          speed: 0.18 * Math.pow(R_OUTER / r, 0.5), // <-- keep your reduced value
+          speed: 0.07 * Math.pow(R_OUTER / r, 0.5), // <-- keep your reduced value
           size: vsizeToSize(tx.vsize, baseSize),
           color: feerateColor(tx.feerate, new THREE.Color()),
           feerate: tx.feerate,

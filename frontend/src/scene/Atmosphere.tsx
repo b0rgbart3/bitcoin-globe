@@ -13,6 +13,8 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import type { MempoolState } from "@btcglobe/shared/types";
 import { pressureFromMempool } from "./pressure";
+import { atmosphereDimMultiplier } from "./blockPulse";
+import { PULSE_DURATION } from "./Heartbeat";
 
 export function Atmosphere({
   mempoolRef,
@@ -71,9 +73,12 @@ export function Atmosphere({
   }, [color, exponent, material]);
 
   // Continuous lane: every frame, ease uStrength toward the live pressure target.
-  useFrame((_, dt) => {
+  // After a block heartbeat the dim multiplier pulls the target down for ~2s,
+  // extending the shockwave effect before the atmosphere recovers.
+  useFrame((state, dt) => {
     const pressure = pressureFromMempool(mempoolRef.current);
-    const target = baseStrength + (maxStrength - baseStrength) * pressure;
+    const dimMult = atmosphereDimMultiplier(state.clock.elapsedTime, PULSE_DURATION);
+    const target = (baseStrength + (maxStrength - baseStrength) * pressure) * dimMult;
     const u = material.uniforms.uStrength;
     u.value = THREE.MathUtils.damp(u.value, target, damping, dt);
   });
