@@ -99,6 +99,8 @@ Two things are accurate and one is deliberately wrong:
 - The transaction feed is a **rolling window**, not a firehose. During bursts, arrivals are missed — the `tx/s` stat labels itself `·sampled` when it detects saturation.
 - `feeRange[0]` is a good approximation, but CPFP and package relay mean a low-fee transaction can ride in on a high-fee child.
 - The mote swarm holds a few thousand transactions against a real backlog of ~250,000. It's a window on **arrivals**, never the whole mempool.
+- **Node opacity breathes** on a slow ambient cycle — an aesthetic rhythm, not a signal from any data source.
+- **The atmosphere briefly dims after a block is confirmed** — a visual punctuation mark, not a measurement of mempool state. Real mempool pressure resumes driving the brightness immediately after.
 
 ---
 

@@ -246,6 +246,15 @@ export function AboutModal({ onClose }: Props) {
               The mote swarm holds a few thousand transactions against a real backlog that can exceed
               250,000. It's a window on <strong>arrivals</strong>, never the whole mempool.
             </li>
+            <li>
+              <strong>Node opacity breathes</strong> on a slow ambient cycle — this is an aesthetic
+              rhythm, not a signal from any data source.
+            </li>
+            <li>
+              <strong>The atmosphere briefly dims after a block is confirmed</strong> — a visual
+              punctuation mark, not a measurement of mempool state. Real mempool pressure resumes
+              driving the brightness immediately after.
+            </li>
           </ul>
 
           {/* ── What it teaches ─────────────────────────────────────── */}
