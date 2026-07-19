@@ -19,6 +19,7 @@ It is built on one rule: **the aesthetic is the information.** Every moving, glo
 | **Block heartbeat**    | A block being mined                           | A cool teal flare across all nodes + expanding shockwave                   |
 | **Sunlight**           | Real time of day                              | Directional light at the true subsolar point                               |
 | **Moon**               | The real Moon at its current position         | Phase ← sunlight geometry · Size ← exact proportion · Position ← sublunar point |
+| **ISS**                | The International Space Station               | Inclination 51.6° · Altitude 408 km · Period 92.68 min (all real) · Phase arbitrary (no live TLE) · Geometry exaggerated for visibility |
 | **Telemetry**          | Live figures                                  | Located · unlocatable · height · pending vMB · tx/s · sat/vB · since block |
 
 ---
@@ -70,6 +71,16 @@ Block fullness is `weight / 4,000,000`, not size in MB. SegWit discounts witness
 ### Motes die when a block confirms them, not on a timer
 
 A transaction's real lifetime runs from arrival to confirmation — an _event_, not a duration. Each block reports `feeRange[0]`, the lowest feerate it included; miners fill greedily by feerate, so every pending mote at or above that threshold flares and vanishes at the pulse. Because feerate is also radius, the block eats the cloud from the **inside out**: the inner high-fee shell flashes away while the cool low-fee stragglers keep drifting, still waiting — because in reality, they are.
+
+### The ISS orbit is real; the position on it is not
+
+The ISS orbit has an inclination of 51.6°, an altitude of 408 km, and a period of 92.68 minutes — all real figures. The inclined orbit ring traces the correct band of latitudes the station actually sweeps (±51.6°), at true scale, moving at the real angular rate.
+
+One thing is deliberately wrong:
+
+- **Position on orbit** — without a live TLE feed there is no way to know the ISS's current angular position. The station starts at an arbitrary point each time the scene loads. The _shape and altitude_ of the orbit are correct; only the station's location within it is invented.
+
+The ISS structure itself is exaggerated several hundred× in size — at true scale (109 m wide) it would be sub-pixel.
 
 ### The Moon phase is not drawn — it falls out
 
@@ -159,7 +170,7 @@ bitcoin-globe/
 │   └── fixtures/
 └── frontend/        # React + Three.js
     └── src/scene/   # Globe · Coastlines · Atmosphere · Heartbeat ·
-                     # UnlocatableHalo · TransactionStream · SunLight · Starfield · Moon
+                     # UnlocatableHalo · TransactionStream · SunLight · Starfield · Moon · ISS
 ```
 
 ## Prerequisites

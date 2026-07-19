@@ -10,6 +10,7 @@ import { Heartbeat } from "./scene/Heartbeat";
 import { useEffect, useState } from "react";
 import { SunLight } from "./scene/SunLight";
 import { Moon } from "./scene/Moon";
+import { ISS } from "./scene/ISS";
 import { AboutModal } from "./AboutModal";
 
 function Stat({ value, label }: { value: string; label: string }) {
@@ -127,6 +128,7 @@ export default function App() {
         <SunLight />
         {/* <directionalLight position={[4, 2, 3]} intensity={1.1} /> */}
         <Moon />
+        <ISS />
         <Starfield />
         <Globe
           snapshot={snapshot}

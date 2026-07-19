@@ -89,6 +89,10 @@ export function AboutModal({ onClose }: Props) {
                 <td className="about-panel__table-key">Moon</td>
                 <td>The real Moon at its current position — phase from sunlight geometry, size from exact proportion, position from the sublunar point</td>
               </tr>
+              <tr>
+                <td className="about-panel__table-key">ISS</td>
+                <td>The International Space Station at true orbital altitude (408 km) and inclination (51.6°) — geometry exaggerated for visibility; initial phase arbitrary (no live TLE)</td>
+              </tr>
             </tbody>
           </table>
 
@@ -191,6 +195,19 @@ export function AboutModal({ onClose }: Props) {
             flares and vanishes at the pulse. The low-fee stragglers keep drifting — because in
             reality, they are still waiting.
           </p>
+
+          <h3 className="about-panel__subsection">The ISS Orbit is Real; the Position on It Is Not</h3>
+          <p>
+            The ISS orbit has an inclination of exactly 51.6° and a period of 92.68 minutes — both
+            real figures. The altitude (408 km) is also accurate to scale. The inclined orbit ring
+            traces the correct band of latitudes the station actually sweeps (±51.6°), and it moves
+            at the real angular rate.
+          </p>
+          <p>One thing is deliberately wrong:</p>
+          <ul className="about-panel__list">
+            <li><strong>Position on orbit</strong> — without a live TLE feed there is no way to know the ISS's current angular position. The station starts at an arbitrary point on the ring each time the scene loads. The <em>shape and altitude</em> of the orbit are correct; only the station's location within it is invented.</li>
+          </ul>
+          <p>The ISS structure itself is exaggerated several hundred× in size — it is 109 m wide in reality, sub-pixel at true scale.</p>
 
           <h3 className="about-panel__subsection">The Moon Phase is Not Drawn — It Falls Out</h3>
           <p>

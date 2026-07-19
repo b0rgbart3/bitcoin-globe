@@ -120,8 +120,8 @@ export function UnlocatableHalo({
     const mat = matRef.current;
     if (!mat) return;
 
-    // 3-second sine hum in sync with located nodes: 0.75→0.5→0.75→1.0→0.75
-    mat.opacity = 0.75 - 0.25 * Math.sin((state.clock.elapsedTime * Math.PI * 2) / HUM_PERIOD);
+    // Counter-phase hum: bright when globe nodes are dim, dim when they are bright
+    mat.opacity = 0.75 + 0.25 * Math.sin((state.clock.elapsedTime * Math.PI * 2) / HUM_PERIOD);
 
     const p = pulseProgress(state.clock.elapsedTime, PULSE_DURATION);
     if (p === null) {
