@@ -27,21 +27,21 @@ const PANEL_Y_OFFSET = 0.02; // how far each panel pair sits off the truss (zeni
 const MODULE_R = 0.022; // habitat capsule radius
 
 const GOLD = new THREE.MeshStandardMaterial({
-  color: "#1ab1c8",
+  color: "#168798",
   roughness: 0.4,
   metalness: 0.5,
-  emissive: "#0096b0",
+  emissive: "#077083",
   emissiveIntensity: 0.7,
 });
 const SILVER = new THREE.MeshStandardMaterial({
-  color: "#9ab0bc",
+  color: "#849ca9",
   roughness: 0.3,
   metalness: 0.8,
   emissive: "#6090a8",
   emissiveIntensity: 0.4,
 });
 const WHITE = new THREE.MeshStandardMaterial({
-  color: "#d8eaf2",
+  color: "#a5bfcb",
   roughness: 0.5,
   metalness: 0.2,
   emissive: "#80aac0",

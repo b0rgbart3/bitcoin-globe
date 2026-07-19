@@ -84,9 +84,17 @@ export class MempoolSource {
         if (Array.isArray(msg.transactions) && msg.transactions.length) {
           this.opts.onTransactions?.(normalizeTxs(msg.transactions as TxRaw[]));
         }
-        // --- prime the tip height from the initial history (no heartbeat) ---
+        // --- prime the tip from the initial history (no heartbeat yet) ---
         if (Array.isArray(msg.blocks) && msg.blocks.length && this.lastBlockHeight === null) {
-          this.lastBlockHeight = Math.max(...msg.blocks.map((b: any) => b?.height ?? 0));
+          const latest = (msg.blocks as BlockRaw[]).reduce((a: BlockRaw, b: BlockRaw) =>
+            (b?.height ?? 0) > (a?.height ?? 0) ? b : a
+          );
+          if (latest) {
+            const block = normalizeBlock(latest);
+            this.lastBlockHeight = block.height;
+            this.lastBlock = block;
+            // Not calling onBlock — this is historical data, not a new confirmation
+          }
         }
 
         if (msg.transactions) {

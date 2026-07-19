@@ -12,6 +12,40 @@ import { SunLight } from "./scene/SunLight";
 import { Moon } from "./scene/Moon";
 import { ISS } from "./scene/ISS";
 import { AboutModal } from "./AboutModal";
+import { BlockHeightOrbit } from "./scene/BlockHeightOrbit";
+
+function blockRewardBTC(blockHeight: number): string {
+  const era = BigInt(blockHeight) / 210_000n;
+  const sats = 5_000_000_000n >> era;
+  return (Number(sats) / 1e8).toString();
+}
+
+function remainingSatoshis(blockHeight: number): bigint {
+  const HALVING_INTERVAL = 210_000n;
+  const INITIAL_REWARD = 5_000_000_000n; // 50 BTC in satoshis
+  const height = BigInt(blockHeight);
+  const era = height / HALVING_INTERVAL;
+  const currentReward = INITIAL_REWARD >> era;
+  if (currentReward === 0n) return 0n;
+  const blocksLeftInEra = (era + 1n) * HALVING_INTERVAL - height;
+  let remaining = blocksLeftInEra * currentReward;
+  let nextEra = era + 1n;
+  while (true) {
+    const reward = INITIAL_REWARD >> nextEra;
+    if (reward === 0n) break;
+    remaining += HALVING_INTERVAL * reward;
+    nextEra += 1n;
+  }
+  return remaining;
+}
+
+function formatSats(sats: bigint): string {
+  const n = Number(sats);
+  if (n >= 1e12) return (n / 1e12).toFixed(1) + "T";
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  return n.toLocaleString();
+}
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -34,6 +68,13 @@ export default function App() {
   } = useNetworkSocket();
   const [elapsed, setElapsed] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
+
+  // Use whichever source has the higher value: snapshot updates continuously,
+  // block fires immediately on confirmation but persists stale across reconnects.
+  const chainHeight =
+    Math.max(block?.height ?? 0, snapshot?.chainHeight ?? 0) || null;
+
+  const satsLeftToMine = chainHeight ? remainingSatoshis(chainHeight) : null;
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -72,9 +113,35 @@ export default function App() {
             />
 
             <Stat
-              value={snapshot.chainHeight.toLocaleString()}
+              value={(chainHeight ?? snapshot.chainHeight).toLocaleString()}
               label="height"
             />
+
+            {chainHeight && (
+              <Stat
+                value={blockRewardBTC(chainHeight)}
+                label="block reward BTC"
+              />
+            )}
+            {block && (
+              <Stat
+                value={(block.sizeBytes / 1e6).toFixed(2)}
+                label="last block MB"
+              />
+            )}
+
+            {satsLeftToMine !== null && (
+              <Stat
+                value={formatSats(satsLeftToMine)}
+                label="sats left to mine"
+              />
+            )}
+            {satsLeftToMine !== null && (
+              <Stat
+                value={formatSats(satsLeftToMine / 100_000_000n)}
+                label="BTC left to mine"
+              />
+            )}
 
             {mempool && (
               <Stat
@@ -129,6 +196,7 @@ export default function App() {
         {/* <directionalLight position={[4, 2, 3]} intensity={1.1} /> */}
         <Moon />
         <ISS />
+        <BlockHeightOrbit chainHeight={chainHeight} />
         <Starfield />
         <Globe
           snapshot={snapshot}
