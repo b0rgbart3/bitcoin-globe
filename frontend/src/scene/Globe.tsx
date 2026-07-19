@@ -10,7 +10,7 @@ import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
 import { Coastlines } from "./Coastlines";
 import { Atmosphere } from "./Atmosphere";
-import type { NodeSnapshot, MempoolState, Block } from "@btcglobe/shared/types";
+import type { NodeSnapshot, MempoolState, Block, Tx } from "@btcglobe/shared/types";
 import { UnlocatableHalo } from "./UnlocatableHalo";
 import { TransactionStream } from "./TransactionStream";
 import { Nodes } from "./Nodes";
