@@ -1,26 +1,26 @@
-![Bitcoin Globe](screenshot.jpg)
+![Synchronicity: A Bitcoin Visualization](screenshot.jpg)
 
-# Bitcoin Globe
+# Synchronicity: A Bitcoin Visualization
 
-A real-time 3D visualization of the Bitcoin network — the physical machines that carry it, the transactions flowing between them, and the ten-minute heartbeat of consensus.
+A real-time 3D visualization of the Bitcoin network — the physical machines that carry it, the transactions flowing between them, and the variable duration rateheartbeat of consensus (blocks being mined).
 
-It is built on one rule: **the aesthetic is the information.** Every moving, glowing thing on screen is driven by real data, and nothing is invented to make the picture prettier or more dramatic than the network actually is. Several of the most interesting things about this visualization are consequences of refusing to fake anything.
+The driving principle is **honest encoding.** Where something can be measured — a node's location, a transaction's size, a feerate — that measurement drives the visual directly. Aesthetic choices fill the rest, shaped to make the network legible and the experience worth staying with. The balance tips toward the data wherever it can.
 
 ---
 
 ## What it shows
 
-| Layer                  | What it is                                    | Encoding                                                                   |
-| ---------------------- | --------------------------------------------- | -------------------------------------------------------------------------- |
-| **Node globe**         | Reachable Bitcoin nodes with a locatable IP   | Pale green points at real lat/lng                                          |
-| **Unlocatable halo**   | Reachable nodes with **no** coordinates (Tor) | Pale green points in a tumbling off-globe band                             |
-| **Transaction stream** | Each transaction as it enters the mempool     | Size ← vsize · Colour ← feerate · Orbital radius ← feerate rank            |
-| **Atmosphere**         | Aggregate mempool pressure                    | Fresnel shell brightness ← pending vBytes + intake rate                    |
-| **Block heartbeat**    | A block being mined                           | A cool teal flare across all nodes + expanding shockwave                   |
-| **Sunlight**           | Real time of day                              | Directional light at the true subsolar point                               |
-| **Moon**               | The real Moon at its current position         | Phase ← sunlight geometry · Size ← exact proportion · Position ← sublunar point |
+| Layer                  | What it is                                    | Encoding                                                                                                                                |
+| ---------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Node globe**         | Reachable Bitcoin nodes with a locatable IP   | Pale green points at real lat/lng                                                                                                       |
+| **Unlocatable halo**   | Reachable nodes with **no** coordinates (Tor) | Pale green points in a tumbling off-globe band                                                                                          |
+| **Transaction stream** | Each transaction as it enters the mempool     | Size ← vsize · Colour ← feerate · Orbital radius ← feerate rank                                                                         |
+| **Atmosphere**         | Aggregate mempool pressure                    | Fresnel shell brightness ← pending vBytes + intake rate                                                                                 |
+| **Block heartbeat**    | A block being mined                           | A cool teal flare across all nodes + expanding shockwave                                                                                |
+| **Sunlight**           | Real time of day                              | Directional light at the true subsolar point                                                                                            |
+| **Moon**               | The real Moon at its current position         | Phase ← sunlight geometry · Size ← exact proportion · Position ← sublunar point                                                         |
 | **ISS**                | The International Space Station               | Inclination 51.6° · Altitude 408 km · Period 92.68 min (all real) · Phase arbitrary (no live TLE) · Geometry exaggerated for visibility |
-| **Telemetry**          | Live figures                                  | Located · unlocatable · height · pending vMB · tx/s · sat/vB · since block |
+| **Telemetry**          | Live figures                                  | Located · unlocatable · height · pending vMB · tx/s · sat/vB · since block                                                              |
 
 ---
 
@@ -120,6 +120,10 @@ Watch it long enough and it argues with several things people believe about Bitc
 
 ---
 
+## About the Creator
+
+Synchronicity: A Bitcoin Visualization was designed and built by **Bart Dority**— developer, designer, and independent researcher at the intersection of design, engineering, and data visualization systems.
+
 ## Tech stack
 
 | Layer              | Technology                                                                                              |
@@ -135,7 +139,7 @@ Watch it long enough and it argues with several things people believe about Bitc
 | Data sources       | [mempool.space](https://mempool.space) WebSocket · [Bitnodes](https://bitnodes.io)-format node snapshot |
 | Geo data           | `world-atlas` + `topojson-client`                                                                       |
 | Solar position     | NOAA subsolar-point approximation (no API)                                                              |
-| Lunar position     | `astronomy-engine` (NASA, MIT) — DE405-accuracy geocentric equatorial coords + GMST                    |
+| Lunar position     | `astronomy-engine` (NASA, MIT) — DE405-accuracy geocentric equatorial coords + GMST                     |
 | Monorepo           | npm workspaces                                                                                          |
 
 ### Architecture

@@ -253,6 +253,23 @@
         padding-left: 0;
       }
     }
+
+    @media (max-width: 520px) {
+      tr {
+        display: block;
+        padding: 0.7rem 0;
+      }
+
+      td {
+        display: block;
+        width: 100%;
+        padding: 0;
+
+        &:first-child {
+          padding-bottom: 0.3rem;
+        }
+      }
+    }
   }
 
   &__table-key {
@@ -262,6 +279,11 @@
     font-size: 0.75rem;
     font-weight: 500;
     min-width: 9rem;
+
+    @media (max-width: 520px) {
+      white-space: normal;
+      min-width: unset;
+    }
   }
 
   // ── List ────────────────────────────────────────────────────────────────

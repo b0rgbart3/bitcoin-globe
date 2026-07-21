@@ -68,7 +68,8 @@ export default function App() {
   } = useNetworkSocket();
   const [elapsed, setElapsed] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [statsOpen, setStatsOpen] = useState(true);
+  const [statsOpen, setStatsOpen] = useState(() => window.innerWidth > 520);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Use whichever source has the higher value: snapshot updates continuously,
   // block fires immediately on confirmation but persists stale across reconnects.
@@ -88,7 +89,7 @@ export default function App() {
     <div className="app">
       <div className="telemetry">
         <div className="telemetry__title">
-          Bitcoin Network{" "}
+          Synchronicity: A Bitcoin Visualization
           <span
             className={
               connected
@@ -99,90 +100,95 @@ export default function App() {
             · {connected ? "Live" : "Offline"}
           </span>
         </div>
-        <div className={`telemetry__body${statsOpen ? "" : " telemetry__body--hidden"}`}>
-        {snapshot ? (
-          <div className="telemetry__readout">
-            {block && (
+        <div
+          className={`telemetry__body${statsOpen ? "" : " telemetry__body--hidden"}`}
+        >
+          {snapshot ? (
+            <div className="telemetry__readout">
+              {block && (
+                <Stat
+                  value={`${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`}
+                  label="since block"
+                />
+              )}
               <Stat
-                value={`${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`}
-                label="since block"
+                value={snapshot.located.length.toString()}
+                label="located"
               />
-            )}
-            <Stat value={snapshot.located.length.toString()} label="located" />
-            <Stat
-              value={snapshot.unlocatableCount.toString()}
-              label="unlocatable"
-            />
+              <Stat
+                value={snapshot.unlocatableCount.toString()}
+                label="unlocatable"
+              />
 
-            <Stat
-              value={(chainHeight ?? snapshot.chainHeight).toLocaleString()}
-              label="height"
-            />
+              <Stat
+                value={(chainHeight ?? snapshot.chainHeight).toLocaleString()}
+                label="height"
+              />
 
-            {chainHeight && (
-              <Stat
-                value={blockRewardBTC(chainHeight)}
-                label="block reward BTC"
-              />
-            )}
-            {block && (
-              <Stat
-                value={(block.sizeBytes / 1e6).toFixed(2)}
-                label="last block MB"
-              />
-            )}
+              {chainHeight && (
+                <Stat
+                  value={blockRewardBTC(chainHeight)}
+                  label="block reward BTC"
+                />
+              )}
+              {block && (
+                <Stat
+                  value={(block.sizeBytes / 1e6).toFixed(2)}
+                  label="last block MB"
+                />
+              )}
 
-            {satsLeftToMine !== null && (
-              <Stat
-                value={formatSats(satsLeftToMine)}
-                label="sats left to mine"
-              />
-            )}
-            {satsLeftToMine !== null && (
-              <Stat
-                value={formatSats(satsLeftToMine / 100_000_000n)}
-                label="BTC left to mine"
-              />
-            )}
+              {satsLeftToMine !== null && (
+                <Stat
+                  value={formatSats(satsLeftToMine)}
+                  label="sats left to mine"
+                />
+              )}
+              {satsLeftToMine !== null && (
+                <Stat
+                  value={formatSats(satsLeftToMine / 100_000_000n)}
+                  label="BTC left to mine"
+                />
+              )}
 
-            {mempool && (
-              <Stat
-                value={(mempool.pendingVBytes / 1e6).toFixed(1)}
-                label="pending vMB"
-              />
-            )}
-            {mempool && (
-              <Stat
-                value={Math.round(mempool.intakeVBytesPerSec).toString()}
-                label="intake vB/s"
-              />
-            )}
-            {mempool && (
-              <Stat
-                value={Math.round(
-                  pressureFromMempool(mempool) * 100,
-                ).toString()}
-                label="pressure"
-              />
-            )}
-            {txStats && (
-              <Stat value={txStats.medianFeerate.toFixed(1)} label="sat/vB" />
-            )}
-            {txStats && (
-              <Stat
-                value={txStats.sinceBlock.toLocaleString()}
-                label="TXs in block"
-              />
-            )}
-            {txStats && <Stat value={txStats.rate.toFixed(1)} label="tx/s" />}
-          </div>
-        ) : (
-          <div className="telemetry__standby">
-            {connected
-              ? "awaiting first snapshot…"
-              : "live feed unavailable · reconnecting…"}
-          </div>
-        )}
+              {mempool && (
+                <Stat
+                  value={(mempool.pendingVBytes / 1e6).toFixed(1)}
+                  label="pending vMB"
+                />
+              )}
+              {mempool && (
+                <Stat
+                  value={Math.round(mempool.intakeVBytesPerSec).toString()}
+                  label="intake vB/s"
+                />
+              )}
+              {mempool && (
+                <Stat
+                  value={Math.round(
+                    pressureFromMempool(mempool) * 100,
+                  ).toString()}
+                  label="pressure"
+                />
+              )}
+              {txStats && (
+                <Stat value={txStats.medianFeerate.toFixed(1)} label="sat/vB" />
+              )}
+              {txStats && (
+                <Stat
+                  value={txStats.sinceBlock.toLocaleString()}
+                  label="TXs in block"
+                />
+              )}
+              {txStats && <Stat value={txStats.rate.toFixed(1)} label="tx/s" />}
+            </div>
+          ) : (
+            <div className="telemetry__standby">
+              {connected
+                ? "awaiting first snapshot…"
+                : "live feed unavailable · reconnecting…"}
+            </div>
+          )}
         </div>
       </div>
 
@@ -195,6 +201,43 @@ export default function App() {
       <button className="about-btn" onClick={() => setAboutOpen(true)}>
         About
       </button>
+
+      {/* Mobile hamburger — hidden on desktop via CSS */}
+      <button
+        className={`hamburger-btn${menuOpen ? " hamburger-btn--open" : ""}`}
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-label="Menu"
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      {menuOpen && (
+        <>
+          <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />
+          <div className="mobile-menu">
+            <button
+              className={`mobile-menu__item${statsOpen ? " mobile-menu__item--active" : ""}`}
+              onClick={() => {
+                setStatsOpen((v) => !v);
+                setMenuOpen(false);
+              }}
+            >
+              Stats
+            </button>
+            <button
+              className="mobile-menu__item"
+              onClick={() => {
+                setAboutOpen(true);
+                setMenuOpen(false);
+              }}
+            >
+              About
+            </button>
+          </div>
+        </>
+      )}
 
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
 

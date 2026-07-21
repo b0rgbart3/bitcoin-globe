@@ -132,10 +132,10 @@ canvas {
   top: 1.5rem;
   right: 1.5rem;
   z-index: 10;
-  background: transparent;
-  border: 1px solid rgba(45, 180, 190, 0.32);
+  background: rgba(0,0,0,.5);
+  border: 1px solid rgba(45, 180, 190, 1);
   border-radius: 3px;
-  color: #6fa8c8;
+  color: #63b4e3;
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 0.62rem;
   font-weight: 500;
@@ -150,6 +150,107 @@ canvas {
     border-color: rgba(45, 210, 210, 0.6);
     background: rgba(45, 180, 190, 0.07);
     text-shadow: 0 0 10px rgba(90, 212, 200, 0.5);
+  }
+}
+
+// ── Mobile hamburger ────────────────────────────────────────────────────────
+.hamburger-btn {
+  display: none; // desktop: hidden
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 20;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(45, 180, 190,1);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  span {
+    display: block;
+    width: 16px;
+    height: 2px;
+    background: #6fa8c8;
+    border-radius: 1px;
+    transition: background 0.15s, transform 0.2s, opacity 0.2s;
+    transform-origin: center;
+  }
+
+  &:hover {
+    border-color: rgba(45, 210, 210, 0.6);
+    span { background: #a8dde0; }
+  }
+
+  &--open {
+    span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+    span:nth-child(2) { opacity: 0; }
+    span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+  }
+
+  @media (max-width: 520px) { display: flex; }
+}
+
+// Hide desktop buttons on mobile
+@media (max-width: 520px) {
+  .stats-btn,
+  .about-btn { display: none; }
+}
+
+// ── Mobile menu backdrop ─────────────────────────────────────────────────────
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+}
+
+// ── Mobile menu dropdown ─────────────────────────────────────────────────────
+.mobile-menu {
+  position: absolute;
+  top: calc(1.5rem + 2.55rem);
+  right: 1.5rem;
+  z-index: 20;
+  background: rgba(8, 14, 26, 0.97);
+  border: 1px solid rgba(45, 180, 190, 0.28);
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 8rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  &__item {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(45, 180, 190, 0.15);
+    color: #6fa8c8;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.15s, background 0.15s;
+
+    &:last-child { border-bottom: none; }
+
+    &:hover {
+      color: #a8dde0;
+      background: rgba(45, 180, 190, 0.07);
+    }
+
+    &--active {
+      color: #97c1f1;
+      text-shadow: 0 0 8px rgba(100, 180, 255, 0.5);
+    }
   }
 }
 
