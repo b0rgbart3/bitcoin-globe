@@ -23,7 +23,7 @@ const arrowGeo = new THREE.ConeGeometry(0.05, 0.18, 8);
 const arrowMat = new THREE.MeshBasicMaterial({
   color: COLOR,
   transparent: true,
-  opacity: 0.05,
+  opacity: 0.1,
 });
 
 export function MoonOrbitRing() {
@@ -34,9 +34,9 @@ export function MoonOrbitRing() {
     const mat = new THREE.LineDashedMaterial({
       color: COLOR,
       transparent: true,
-      opacity: 0.2,
-      dashSize: 0.15,
-      gapSize: 0.25,
+      opacity: 0.52,
+      dashSize: 0.1,
+      gapSize: 0.15,
     });
     const l = new THREE.Line(geo, mat);
     l.computeLineDistances();

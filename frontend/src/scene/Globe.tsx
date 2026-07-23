@@ -10,7 +10,12 @@ import * as THREE from "three";
 import { OrbitControls } from "@react-three/drei";
 import { Coastlines } from "./Coastlines";
 import { Atmosphere } from "./Atmosphere";
-import type { NodeSnapshot, MempoolState, Block, Tx } from "@btcglobe/shared/types";
+import type {
+  NodeSnapshot,
+  MempoolState,
+  Block,
+  Tx,
+} from "@btcglobe/shared/types";
 import { UnlocatableHalo } from "./UnlocatableHalo";
 import { TransactionStream } from "./TransactionStream";
 import { Nodes } from "./Nodes";
@@ -122,7 +127,7 @@ export function Globe({
         maxDistance={30}
         autoRotate
         autoRotateSpeed={0.3}
-        zoomSpeed={0.04} /* default is 1.0 — lower = slower */
+        zoomSpeed={0.2} /* default is 1.0 — lower = slower */
       />
     </group>
   );
